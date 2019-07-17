@@ -1,3 +1,14 @@
+/*
+TODO:
+add line clear and line check functions to World,
+draw graphics
+keep track of scores
+add file handeling
+set up settings and controls
+add the other modes
+add finishing touches
+*/
+
 #include <iostream>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
@@ -369,6 +380,8 @@ int main(int argc, char* arg[]) {
 		}
 
 	}
+
+	yeet;
 }
 
 bool init(SDL_Window** window, SDL_Renderer** Render) {
