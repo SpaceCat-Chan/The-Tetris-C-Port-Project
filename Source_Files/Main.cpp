@@ -45,7 +45,15 @@ enum Modes {
 	Hidden,
 	Swap,
 	Puyo,
-	TOTAL_AMOUNT
+	TOTAL_MODES
+};
+
+enum Rotations {
+	ORIGINAL,
+	RIGHT,
+	DOUBLE,
+	LEFT,
+	TOTAL_ROTATIONS
 };
 
 class Image {
@@ -122,10 +130,33 @@ class Image {
 
 class Mino {
 	friend class Tetromino;
+	friend class World;
 	int Type=0;
 	Image* ImageFile=nullptr;
 	SDL_Point Position;
+	bool Active = true;
 	public:
+
+	Mino() {
+		Position.x = -1;
+		Position.y = -1;
+	}
+
+	Mino(int x, int y) {
+		Position.x = x;
+		Position.y = y;
+	}
+
+	~Mino() = default;
+
+	Mino(Mino& Copy) = default;
+
+	Mino& operator=(Mino& Copy) = default;
+
+	Mino(Mino&& Move) = default;
+
+	Mino& operator=(Mino&& Move) = default;
+
 	void SetImage(Image* LoadImage) {
 		ImageFile = LoadImage;
 	}
@@ -145,6 +176,9 @@ class Mino {
 	void Draw(SDL_Renderer* Render, int X_Offset, int Y_Offset) {
 		ImageFile->Draw(X_Offset + 28 * Position.x, SCREEN_HEIGHT - (Y_Offset + 28 * Position.y), Render);
 	}
+	bool GetActive() {
+		return Active;
+	}
 };
 
 SDL_Point RotatePoint(bool Dir, SDL_Point ToRotate) { //Dir: True = Clockwise
@@ -160,9 +194,12 @@ SDL_Point RotatePoint(bool Dir, SDL_Point ToRotate) { //Dir: True = Clockwise
 	return(Rotated);
 }
 
+class World;
+
 class Tetromino {
+	friend class World;
 	Mino MainPiece, *Pieces=nullptr;
-	int Type, Length;
+	int Type, Length, Rotation;
 	public:
 	
 	Tetromino() {}
@@ -184,6 +221,7 @@ class Tetromino {
 				Pieces[i] = Copy.Pieces[i];
 			}
 		}
+
 	}
 
 	Tetromino& operator= (Tetromino& Copy) {
@@ -215,18 +253,67 @@ class Tetromino {
 		return *this;
 	}
 
-	void ResetShape(int Length=3, int Mode=Modes::Standard);
+	void ResetShape(int Length, int Mode);
 
 	void SetLocation(int x, int y) {
 		MainPiece.SetPosition(x, y);
 	}
 	Tetromino Rotate(bool Dir);
 
+	void RotateSelf(bool Dir, World* TestWith);
+
+	bool MoveDown(World* Testwith);
+
 	void SetImages(Image** ImageList) {
 		for(int i=0; i<Length; i++) {
 			Pieces[i].SetImageFromType(ImageList);
 		}
 		MainPiece.SetImageFromType(ImageList);
+	}
+};
+
+class World {
+	Mino **Info=nullptr, Random{-1, -1};
+	int x,y;
+	public:
+	World() {
+		Info = new Mino*[25];
+		for(int i=0; i<25; i++) {
+			Info[i] = new Mino[10];
+			for(int k=0; k<10; k++) {
+				Info[i][k].Active = false;
+			}
+		}
+		x = 10;
+		y = 25;
+	}
+	World(int X, int Y) {
+		Info = new Mino*[Y];
+		for(int i=0; i<Y; i++) {
+			Info[i] = new Mino[X];
+			for(int k=0; k<X; k++) {
+				Info[i][k].Active = false;
+			}
+		}
+		x = X;
+		y = Y;
+	}
+	Mino& GetSpot(int X, int Y) {
+		if(X < 0 || X >= x || Y < 0 || Y>= y) {
+			return Random;
+		}
+		return Info[Y][X];
+	}
+	void AbsorbTertomino(Tetromino& Absorb) {
+		for(int i=0; i<Absorb.Length; i++) {
+			Info[Absorb.Pieces[i].GetPosition().y][Absorb.Pieces[i].GetPosition().x] = Absorb.Pieces[i];
+		}
+		Info[Absorb.MainPiece.GetPosition().y][Absorb.MainPiece.GetPosition().x];
+
+		delete[] Absorb.Pieces;
+		Absorb.Pieces = nullptr;
+		Mino Random;
+		Absorb.MainPiece = Random;
 	}
 };
 
@@ -428,7 +515,7 @@ void Close(SDL_Window* window, SDL_Renderer* Render) {
 	O_template[3].x = 0;
 	O_template[3].y = -1;
 
-	std::uniform_int_distribution dist(0,6);
+	std::uniform_int_distribution<int> dist(0,6);
 	std::mt19937 Engine;
 
 	SDL_Point* Selected_Template;
@@ -491,6 +578,7 @@ void Close(SDL_Window* window, SDL_Renderer* Render) {
 		MainPiece.SetType(Type);
 	}
 	Length = length;
+	Rotation = Rotations::ORIGINAL;
 }
 
 Tetromino Tetromino::Rotate(bool Dir) {
@@ -503,3 +591,105 @@ Tetromino Tetromino::Rotate(bool Dir) {
 	return Rotated;
 }
 
+SDL_Point* SubtractPointLists(SDL_Point* A, SDL_Point* B) {
+	SDL_Point* Result;
+	Result = new SDL_Point[5];
+
+	Result[0].x = A[0].x - B[0].x;
+	Result[0].y = A[0].y - B[0].y;
+
+	Result[1].x = A[1].x - B[1].x;
+	Result[1].y = A[1].y - B[1].y;
+
+	Result[2].x = A[2].x - B[2].x;
+	Result[2].y = A[2].y - B[2].y;
+
+	Result[3].x = A[3].x - B[3].x;
+	Result[3].y = A[3].y - B[3].y;
+
+	Result[4].x = A[4].x - B[4].x;
+	Result[4].y = A[4].y - B[4].y;
+
+	return Result;
+}
+
+void Tetromino::RotateSelf(bool Dir, World* TestWith) {
+#include "SRS_File.cpp"
+
+	SDL_Point** Final_Offset;
+
+	if(Type == TetrominoList::I) {
+		Final_Offset = I_OffSet;
+	}
+	else if(Type == TetrominoList::O) {
+		Final_Offset = O_OffSet;
+	}
+	else {
+		Final_Offset = Other_OffSet;
+	}
+
+	int NewRotation;
+	
+	NewRotation = (Dir) ? (Rotation + 1) : (Rotation - 1);
+
+	if(NewRotation < Rotations::ORIGINAL) {
+		NewRotation = Rotations::LEFT;
+	}
+	else if(NewRotation > Rotations::LEFT) {
+		NewRotation = Rotations::ORIGINAL;
+	}
+
+	SDL_Point* Translations;
+	Translations = SubtractPointLists(Final_Offset[Rotation], Final_Offset[NewRotation]);
+
+	bool Succes_Final = false;
+	int Succesful_Translation = 0;
+
+	for(int i=0; i<5; i++) {
+		Tetromino TestTetromino;
+		bool Current_Succes = true;
+
+		TestTetromino = Rotate(Dir);
+		TestTetromino.MainPiece.SetPosition(TestTetromino.MainPiece.GetPosition().x + Translations[i].x, TestTetromino.MainPiece.GetPosition().y + Translations[i].y);
+		for(int k=0; k<TestTetromino.Length; k++) {
+			if(TestWith->GetSpot(TestTetromino.Pieces[i].Position.x + TestTetromino.MainPiece.Position.x, TestTetromino.Pieces[i].Position.y + TestTetromino.MainPiece.Position.y).Active) {
+				Current_Succes = false;
+				break;
+			}
+		}
+		if(TestWith->GetSpot(TestTetromino.MainPiece.Position.x, TestTetromino.MainPiece.Position.y).Active) {
+			Current_Succes = false;
+		}
+
+		if(Current_Succes) {
+			Succesful_Translation = i;
+			Succes_Final = true;
+			break;
+		}
+	}
+
+	if(Succes_Final) {
+		*this = Rotate(Dir);
+		MainPiece.Position.x += Translations[Succesful_Translation].x;
+		MainPiece.Position.y += Translations[Succesful_Translation].y;
+	}
+}
+
+bool Tetromino::MoveDown(World* TestWith) {
+	bool Succes = true;
+
+	for(int i=0; i<Length; i++) {
+		if(TestWith->GetSpot(Pieces[i].Position.x + MainPiece.Position.x, Pieces[i].Position.y + MainPiece.Position.y + 1).Active) {
+			Succes = false;
+		}
+	}
+	if(TestWith->GetSpot(MainPiece.Position.x, MainPiece.Position.y + 1).Active) {
+		Succes = false;
+	}
+
+	if(Succes) {
+		MainPiece.Position.y++;
+	}
+
+	return(!Succes);
+}
