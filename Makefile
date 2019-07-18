@@ -5,13 +5,13 @@ OBJS = Source_Files/Main.cpp
 CC = g++
 
 #COMPILER_FLAGS specifies the additional compilation options we're using
-COMPILER_FLAGS = 
+COMPILER_FLAGS = -g
 
 #LINKER_FLAGS specifies the libraries we're linking against
 LINKER_FLAGS = -lSDL2 -lSDL2_image
 
 #OBJ_NAME specifies the name of our exectuable
-OBJ_NAME = Tetris
+OBJ_NAME = Source_Files/Tetris
 
 #This is the target that compiles our executable
 all : $(OBJS)

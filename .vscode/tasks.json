@@ -1,0 +1,16 @@
+{
+    "tasks": [
+        {
+            "type": "shell",
+            "label": "g++ build active file",
+            "command": "make",
+            "args": [
+                "all"
+            ],
+            "options": {
+                //"cwd": "/bin"
+            }
+        }
+    ],
+    "version": "2.0.0"
+}
