@@ -3,7 +3,7 @@ TODO:
 add line clear and line check functions to World (DONE)
 draw graphics (DONE)
 keep track of scores
-add file handeling
+add file handeling (IN PROGRESS)
 set up settings and controls
 add the other modes
 add finishing touches
