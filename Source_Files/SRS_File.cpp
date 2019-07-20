@@ -1,7 +1,7 @@
-	SDL_Point** I_OffSet;
-	I_OffSet = new SDL_Point*[Rotations::TOTAL_ROTATIONS];
+	std::unique_ptr<std::unique_ptr<SDL_Point[]>[]> I_OffSet;
+	I_OffSet = std::make_unique<std::unique_ptr<SDL_Point[]>[]>(Rotations::TOTAL_ROTATIONS);
 	for(int i=Rotations::ORIGINAL; i<Rotations::TOTAL_ROTATIONS; i++) {
-		I_OffSet[i] = new SDL_Point[5];
+		I_OffSet[i] = std::make_unique<SDL_Point[]>(5);
 	}
 	I_OffSet[Rotations::ORIGINAL][0].x = 0;
 	I_OffSet[Rotations::ORIGINAL][0].y = 0; //IS THERE NOT A BETTER WAY?
@@ -29,7 +29,7 @@
 	I_OffSet[Rotations::RIGHT][2].y = 0;
 
 	I_OffSet[Rotations::RIGHT][3].x = 0;
-	I_OffSet[Rotations::RIGHT][3].y = -1;
+	I_OffSet[Rotations::RIGHT][3].y = 1;
 
 	I_OffSet[Rotations::RIGHT][4].x = 0;
 	I_OffSet[Rotations::RIGHT][4].y = -2;
@@ -69,10 +69,10 @@
 
 
 
-	SDL_Point** O_OffSet;
-	O_OffSet = new SDL_Point*[Rotations::TOTAL_ROTATIONS];
+	std::unique_ptr<std::unique_ptr<SDL_Point[]>[]> O_OffSet;
+	O_OffSet = std::make_unique<std::unique_ptr<SDL_Point[]>[]>(Rotations::TOTAL_ROTATIONS);
 	for(int i=Rotations::ORIGINAL; i<Rotations::TOTAL_ROTATIONS; i++) {
-		O_OffSet[i] = new SDL_Point[5];
+		O_OffSet[i] = std::make_unique<SDL_Point[]>(5);
 	}
 	O_OffSet[Rotations::ORIGINAL][0].x = 0;
 	O_OffSet[Rotations::ORIGINAL][0].y = 0; //AAAAAAAAAAAAAAAAAAAA
@@ -90,8 +90,8 @@
 	O_OffSet[Rotations::ORIGINAL][4].y = 0;
 
 
-	O_OffSet[Rotations::RIGHT][0].x = -1;
-	O_OffSet[Rotations::RIGHT][0].y = 0;
+	O_OffSet[Rotations::RIGHT][0].x = 0;
+	O_OffSet[Rotations::RIGHT][0].y = -1;
 
 	O_OffSet[Rotations::RIGHT][1].x = 0;
 	O_OffSet[Rotations::RIGHT][1].y = 0;
@@ -107,7 +107,7 @@
 
 	
 	O_OffSet[Rotations::DOUBLE][0].x = -1;
-	O_OffSet[Rotations::DOUBLE][0].y = 1;
+	O_OffSet[Rotations::DOUBLE][0].y = -1;
 
 	O_OffSet[Rotations::DOUBLE][1].x = 0;
 	O_OffSet[Rotations::DOUBLE][1].y = 0;
@@ -122,8 +122,8 @@
 	O_OffSet[Rotations::DOUBLE][4].y = 0;
 
 
-	O_OffSet[Rotations::LEFT][0].x = 0;
-	O_OffSet[Rotations::LEFT][0].y = 1;
+	O_OffSet[Rotations::LEFT][0].x = -1;
+	O_OffSet[Rotations::LEFT][0].y = 0;
 
 	O_OffSet[Rotations::LEFT][1].x = 0;
 	O_OffSet[Rotations::LEFT][1].y = 0;
@@ -140,10 +140,10 @@
 
 
 
-	SDL_Point** Other_OffSet;
-	Other_OffSet = new SDL_Point*[Rotations::TOTAL_ROTATIONS];
+	std::unique_ptr<std::unique_ptr<SDL_Point[]>[]> Other_OffSet;
+	Other_OffSet = std::make_unique<std::unique_ptr<SDL_Point[]>[]>(Rotations::TOTAL_ROTATIONS);
 	for(int i=Rotations::ORIGINAL; i<Rotations::TOTAL_ROTATIONS; i++) {
-		Other_OffSet[i] = new SDL_Point[5];
+		Other_OffSet[i] = std::make_unique<SDL_Point[]>(5);
 	}
 	Other_OffSet[Rotations::ORIGINAL][0].x = 0;
 	Other_OffSet[Rotations::ORIGINAL][0].y = 0; //KILL MEEEEEE
@@ -196,8 +196,8 @@
 	Other_OffSet[Rotations::LEFT][0].x = 0;
 	Other_OffSet[Rotations::LEFT][0].y = 0;
 
-	Other_OffSet[Rotations::LEFT][1].x = 0;
-	Other_OffSet[Rotations::LEFT][1].y = -1;
+	Other_OffSet[Rotations::LEFT][1].x = -1;
+	Other_OffSet[Rotations::LEFT][1].y = 0;
 
 	Other_OffSet[Rotations::LEFT][2].x = -1;
 	Other_OffSet[Rotations::LEFT][2].y = -1;

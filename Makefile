@@ -11,7 +11,7 @@ COMPILER_FLAGS = -g
 LINKER_FLAGS = -lSDL2 -lSDL2_image
 
 #OBJ_NAME specifies the name of our exectuable
-OBJ_NAME = Source_Files/Tetris
+OBJ_NAME = Build/Tetris
 
 #This is the target that compiles our executable
 all : $(OBJS)

@@ -1,22 +1,29 @@
 /*
 TODO:
-add line clear and line check functions to World,
-draw graphics
+add line clear and line check functions to World (DONE)
+draw graphics (DONE)
 keep track of scores
 add file handeling
 set up settings and controls
 add the other modes
 add finishing touches
+
+IMPORTANT:
+Replace pointers with unique_ptr and make_unique
 */
 
 #include <iostream>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <random>
+#include <memory>
 
-#define SCREEN_WIDTH 640
-#define SCREEN_HEIGHT 480
+#define SCREEN_WIDTH 800
+#define SCREEN_HEIGHT 720
 #define yeet return 1
+
+#define GAME_X 230
+#define Text_x 20
 
 /*in lua version there was a thing called ProtSettings
 moving into definitions now*/
@@ -31,6 +38,9 @@ moving into definitions now*/
 #define Max_Types_In_One_Piece 2
 #define Time_Beetween_action 200
 //ProtSettings Finished
+
+#define AmountOfControls 8
+#define AmountOfSettings 3
 
 enum TetrominoList {
 	S,
@@ -67,12 +77,23 @@ enum Rotations {
 	TOTAL_ROTATIONS
 };
 
+namespace Buttons {
+	const int RotLeft=0,
+	RotRight=1,
+	HardDR=2,
+	SoftDR=3,
+	MovLeft=4,
+	MovRight=5,
+	HoldSpot=6,
+	Swap=7;
+}
+
 class Image {
-	SDL_Texture* ImageFile=nullptr;
+	SDL_Texture* ImageFile;
 	int Width, Height;
 	public:
 	void Free() {
-		if(ImageFile != nullptr) {
+		if(ImageFile == nullptr) {
 			SDL_free(ImageFile);
 			ImageFile = nullptr;
 			Width = 0;
@@ -82,6 +103,7 @@ class Image {
 	Image() {
 		Height = 0;
 		Width = 0;
+		ImageFile = nullptr;
 	}
 	~Image() {
 		Free();
@@ -145,17 +167,19 @@ class Mino {
 	int Type=0;
 	Image* ImageFile=nullptr;
 	SDL_Point Position;
-	bool Active = true;
+	bool Active;
 	public:
 
 	Mino() {
 		Position.x = -1;
 		Position.y = -1;
+		Active = true;
 	}
 
 	Mino(int x, int y) {
 		Position.x = x;
 		Position.y = y;
+		Active = true;
 	}
 
 	~Mino() = default;
@@ -171,8 +195,13 @@ class Mino {
 	void SetImage(Image* LoadImage) {
 		ImageFile = LoadImage;
 	}
-	void SetImageFromType(Image** ImageList) {
-		ImageFile = ImageList[Type];
+	void SetImageFromType(std::unique_ptr<Image[]>* ImageList, Image* InactiveImage = nullptr) {
+		if(Active) {
+			ImageFile = &((*ImageList)[Type]);
+		}
+		else {
+			ImageFile = InactiveImage;
+		}
 	}
 	SDL_Point GetPosition() {
 		return Position;
@@ -192,7 +221,7 @@ class Mino {
 	}
 };
 
-SDL_Point RotatePoint(bool Dir, SDL_Point ToRotate) { //Dir: True = Clockwise
+SDL_Point RotatePoint(bool Dir, SDL_Point ToRotate) { //Dir: True = Counter Clockwise
 	SDL_Point Rotated;
 	if(Dir) {
 		Rotated.x = -1 * ToRotate.y;
@@ -209,24 +238,21 @@ class World;
 
 class Tetromino {
 	friend class World;
-	Mino MainPiece, *Pieces=nullptr;
+	Mino MainPiece;
+	std::unique_ptr<Mino[]> Pieces;
 	int Type, Length, Rotation;
 	public:
 	
 	Tetromino() {}
 
-	~Tetromino() {
-		if(Pieces != nullptr) {
-			delete[] Pieces;
-		}
-	}
+	~Tetromino() {}
 
 	Tetromino(Tetromino& Copy) {
 		if(Copy.Pieces != nullptr) {
 			MainPiece = Copy.MainPiece;
 			Type = Copy.Type;
 			Length = Copy.Length;
-			Pieces = new Mino[Length];
+			Pieces = std::make_unique<Mino[]>(Length);
 
 			for(int i=0; i<Length; i++) {
 				Pieces[i] = Copy.Pieces[i];
@@ -239,8 +265,7 @@ class Tetromino {
 		MainPiece = Copy.MainPiece;
 		Type = Copy.Type;
 		Length = Copy.Length;
-		delete[] Pieces;
-		Pieces = new Mino[Length];
+		Pieces = std::make_unique<Mino[]>(Length);
 
 		for(int i=0; i<Length; i++) {
 			Pieces[i] = Copy.Pieces[i];
@@ -248,23 +273,32 @@ class Tetromino {
 		return *this;
 	}
 
-	Tetromino(Tetromino&& Move) {
-		MainPiece = Move.MainPiece;
-		Type = Move.Type;
-		Length = Move.Length;
-		Pieces = Move.Pieces;
+	Tetromino(Tetromino&& Copy) {
+		if(Copy.Pieces != nullptr) {
+			MainPiece = Copy.MainPiece;
+			Type = Copy.Type;
+			Length = Copy.Length;
+			Pieces = std::make_unique<Mino[]>(Length);
+
+			for(int i=0; i<Length; i++) {
+				Pieces[i] = Copy.Pieces[i];
+			}
+		}
 	}
 
-	Tetromino& operator= (Tetromino&& Move) {
-		MainPiece = Move.MainPiece;
-		Type = Move.Type;
-		Length = Move.Length;
-		delete[] Pieces;
-		Pieces = Move.Pieces;
+	Tetromino& operator= (Tetromino&& Copy) {
+		MainPiece = Copy.MainPiece;
+		Type = Copy.Type;
+		Length = Copy.Length;
+		Pieces = std::make_unique<Mino[]>(Length);
+
+		for(int i=0; i<Length; i++) {
+			Pieces[i] = Copy.Pieces[i];
+		}
 		return *this;
 	}
 
-	void ResetShape(int Length, int Mode);
+	void ResetShape(int Length=3, int Mode=Modes::Standard);
 
 	void SetLocation(int x, int y) {
 		MainPiece.SetPosition(x, y);
@@ -275,62 +309,105 @@ class Tetromino {
 
 	bool MoveDown(World* Testwith);
 
-	void SetImages(Image** ImageList) {
+	void SetImages(std::unique_ptr<Image[]>* ImageList) {
 		for(int i=0; i<Length; i++) {
 			Pieces[i].SetImageFromType(ImageList);
 		}
 		MainPiece.SetImageFromType(ImageList);
 	}
+
+	void Draw(SDL_Renderer* Render, int X, int Y) {
+		for(int i=0; i<Length; i++) {
+			Pieces[i].Draw(Render, MainPiece.Position.x * 28 + X, MainPiece.Position.y * 28 + Y + 28);
+		}
+		MainPiece.Draw(Render, X, Y+28);
+	}
+	int GetRotation() {
+		return Rotation;
+	}
+	void MoveSide(int Side, World* TestWith);
 };
 
 class World {
-	Mino **Info=nullptr, Random{-1, -1};
+	Mino Random{-1, -1};
+	std::unique_ptr<std::unique_ptr<Mino[]>[]> Info;
 	int x,y;
 	public:
 	World() {
-		Info = new Mino*[25];
+		Info = std::make_unique<std::unique_ptr<Mino[]>[]>(25);
 		for(int i=0; i<25; i++) {
-			Info[i] = new Mino[10];
+			Info[i] = std::make_unique<Mino[]>(10);
 			for(int k=0; k<10; k++) {
 				Info[i][k].Active = false;
+				Info[i][k].Position.x = k;
+				Info[i][k].Position.y = i;
 			}
 		}
 		x = 10;
 		y = 25;
+		Random.Active = true;
 	}
 	World(int X, int Y) {
-		Info = new Mino*[Y];
+		Info = std::make_unique<std::unique_ptr<Mino[]>[]>(Y);
 		for(int i=0; i<Y; i++) {
-			Info[i] = new Mino[X];
+			Info[i] = std::make_unique<Mino[]>(X);
 			for(int k=0; k<X; k++) {
 				Info[i][k].Active = false;
+				Info[i][k].Position.x = k;
+				Info[i][k].Position.y = i;
 			}
 		}
 		x = X;
 		y = Y;
+		Random.Active = true;
 	}
+	~World() {}
 	Mino& GetSpot(int X, int Y) {
 		if(X < 0 || X >= x || Y < 0 || Y>= y) {
 			return Random;
 		}
 		return Info[Y][X];
 	}
-	void AbsorbTertomino(Tetromino& Absorb) {
+	void AbsorbTetromino(Tetromino& Absorb) {
 		for(int i=0; i<Absorb.Length; i++) {
-			Info[Absorb.Pieces[i].GetPosition().y][Absorb.Pieces[i].GetPosition().x] = Absorb.Pieces[i];
-		}
-		Info[Absorb.MainPiece.GetPosition().y][Absorb.MainPiece.GetPosition().x];
+			Absorb.Pieces[i].Position.x += Absorb.MainPiece.Position.x;
+			Absorb.Pieces[i].Position.y += Absorb.MainPiece.Position.y;
+			Info[Absorb.Pieces[i].Position.y][Absorb.Pieces[i].Position.x] = Absorb.Pieces[i];
+			Info[Absorb.Pieces[i].Position.y][Absorb.Pieces[i].Position.x].Active = true;
 
-		delete[] Absorb.Pieces;
-		Absorb.Pieces = nullptr;
+		}
+		Info[Absorb.MainPiece.Position.y][Absorb.MainPiece.Position.x] = Absorb.MainPiece;
+		Info[Absorb.MainPiece.Position.y][Absorb.MainPiece.Position.x].Active = true;
+
+		Absorb.Pieces.reset();
 		Mino Random;
 		Absorb.MainPiece = Random;
 	}
+	void SetImages(std::unique_ptr<Image[]>* ImageList, Image* InactiveImage) {
+		for(int i=0; i<y; i++) {
+			for(int k=0; k<x; k++) {
+				Info[i][k].SetImageFromType(ImageList, InactiveImage);
+			}
+		}
+	}
+	void Draw(SDL_Renderer* Render, int X, int Y) {
+		for(int i=0; i<y; i++) {
+			for(int k=0; k<x; k++) {
+				Info[i][k].Draw(Render, X, Y+28);
+			}
+		}
+	}
+	//return = size of ReturnList
+	int CheckLines(std::unique_ptr<int[]>* ReturnList);
+
+	void ClearLine(int Line);
 };
 
 bool init(SDL_Window** window, SDL_Renderer** Render);
 
 void close(SDL_Window* window, SDL_Renderer* Render);
+
+class RepeatingKeyPress;
 
 int main(int argc, char* arg[]) {
 	SDL_Window* Window=nullptr;
@@ -341,25 +418,33 @@ int main(int argc, char* arg[]) {
 
 		SDL_Event Event_Handler;
 
-		Image* TetrominoImages[TetrominoList::TOTAL_AMOUNT];
+		std::unique_ptr<Image[]> TetrominoImages;
+		TetrominoImages = std::make_unique<Image[]>(TetrominoList::TOTAL_AMOUNT);
 
-		TetrominoImages[TetrominoList::S]->LoadImage("Minos/SPiece.png", Render);
-		TetrominoImages[TetrominoList::Z]->LoadImage("Minos/ZPiece.png", Render);
-		TetrominoImages[TetrominoList::L]->LoadImage("Minos/LPiece.png", Render);
-		TetrominoImages[TetrominoList::J]->LoadImage("Minos/LPiece.png", Render);
-		TetrominoImages[TetrominoList::I]->LoadImage("Minos/IPiece.png", Render);
-		TetrominoImages[TetrominoList::T]->LoadImage("Minos/TPiece.png", Render);
-		TetrominoImages[TetrominoList::O]->LoadImage("Minos/OPiece.png", Render);
+		std::cout << "Loading Main Images\n";
 
-		Image* GhostImages[TetrominoList::TOTAL_AMOUNT];
+		TetrominoImages[TetrominoList::S].LoadImage("Minos/SPiece.png", Render);
+		TetrominoImages[TetrominoList::Z].LoadImage("Minos/ZPiece.png", Render);
+		TetrominoImages[TetrominoList::L].LoadImage("Minos/LPiece.png", Render);
+		TetrominoImages[TetrominoList::J].LoadImage("Minos/JPiece.png", Render);
+		TetrominoImages[TetrominoList::I].LoadImage("Minos/IPiece.png", Render);
+		TetrominoImages[TetrominoList::T].LoadImage("Minos/TPiece.png", Render);
+		TetrominoImages[TetrominoList::O].LoadImage("Minos/OPiece.png", Render);
 
-		GhostImages[TetrominoList::S]->LoadImage("Minos/SPieceGhost.png", Render);
-		GhostImages[TetrominoList::Z]->LoadImage("Minos/ZPieceGhost.png", Render);
-		GhostImages[TetrominoList::L]->LoadImage("Minos/LPieceGhost.png", Render);
-		GhostImages[TetrominoList::J]->LoadImage("Minos/LPieceGhost.png", Render);
-		GhostImages[TetrominoList::I]->LoadImage("Minos/IPieceGhost.png", Render);
-		GhostImages[TetrominoList::T]->LoadImage("Minos/TPieceGhost.png", Render);
-		GhostImages[TetrominoList::O]->LoadImage("Minos/OPieceGhost.png", Render);
+		std::unique_ptr<Image[]> GhostImages;
+		GhostImages = std::make_unique<Image[]>(TetrominoList::TOTAL_AMOUNT);
+
+		std::cout << "Loading Ghost Images\n";
+
+		GhostImages[TetrominoList::S].LoadImage("Minos/SPieceGhost.png", Render);
+		GhostImages[TetrominoList::Z].LoadImage("Minos/ZPieceGhost.png", Render);
+		GhostImages[TetrominoList::L].LoadImage("Minos/LPieceGhost.png", Render);
+		GhostImages[TetrominoList::J].LoadImage("Minos/LPieceGhost.png", Render);
+		GhostImages[TetrominoList::I].LoadImage("Minos/IPieceGhost.png", Render);
+		GhostImages[TetrominoList::T].LoadImage("Minos/TPieceGhost.png", Render);
+		GhostImages[TetrominoList::O].LoadImage("Minos/OPieceGhost.png", Render);
+
+		std::cout << "Loading other images\n";
 
 		Image Blank;
 		Blank.LoadImage("Minos/Blank.png", Render);
@@ -368,17 +453,215 @@ int main(int argc, char* arg[]) {
 		Background.LoadImage("BackGround.png", Render);
 		Title.LoadImage("Title.png", Render);
 
+		Background.SetColor(128, 128, 128);
+
+		std::cout << "finished loading images\n";
+
+		World Test;
+		Tetromino TestPiece;
+
+		Test.SetImages(&TetrominoImages, &Blank);
+		TestPiece.ResetShape();
+		TestPiece.SetLocation(5, 22);
+		TestPiece.SetImages(&TetrominoImages);
+
+		int CurrentMode = Modes::Standard;
+		int CurrentState = States::Menu;
+
+		int RotateLeft = SDLK_z;
+		int RotateRight = SDLK_c;
+		int HardDrop = SDLK_x;
+		int Hold = SDLK_UP;
+		int MoveLeft = SDLK_LEFT;
+		int MoveRight = SDLK_RIGHT;
+		int SoftDrop = SDLK_DOWN;
+
+
+		long StandardHighscoresTable[5];
+		SDL_RWops* StandardHighscores = nullptr;
+		StandardHighscores = SDL_RWFromFile("Data/StandardHighscores.bin", "rb");
+		if(!StandardHighscores) {
+			std::cout << "Warning, StandardHighscores not found, Creating File SDL_ERROR" << SDL_GetError() << '\n';
+			StandardHighscores = SDL_RWFromFile("Data/StandardHighscores.bin", "wb");
+			if(!StandardHighscores) {
+				std::cout << "Unable to create File, SDL_ERROR: " << SDL_GetError() << "\n";
+				Quit = true;
+				SDL_Delay(5000);
+			}
+			if(!Quit) {
+				int Temp=0;
+				for(int i=0; i<5; i++) {
+					size_t Size;
+					Size = sizeof(long);
+					if(SDL_RWwrite(StandardHighscores, &Temp, Size, 1) != Size) {
+						std::cout << "unable to write all data, SDL_ERROR: " << SDL_GetError() << '\n';
+					}
+				}
+				SDL_RWclose(StandardHighscores);
+				SDL_RWFromFile("Data/StandardHighscores.bin", "rb");
+			}
+		}
+		uint8_t ControlsTable[AmountOfControls];
+		SDL_RWops* ControlsFile = nullptr;
+		if(!Quit) {
+			SDL_RWread(StandardHighscores, StandardHighscoresTable, sizeof(long), 5);
+			SDL_RWclose(StandardHighscores);
+
+			ControlsFile = SDL_RWFromFile("Data/Controls.bin", "rb");
+			if(!ControlsFile) {
+				std::cout << "Warning, StandardHighscores not found, Creating File SDL_ERROR" << SDL_GetError() << '\n';
+				ControlsFile = SDL_RWFromFile("Data/Controls.bin", "wb");
+				if(!ControlsFile) {
+					std::cout << "Unable to create File, SDL_ERROR: " << SDL_GetError() << "\n";
+					Quit = true;
+					SDL_Delay(5000);
+				}
+				if(!Quit) {
+					int RotLeft=SDL_SCANCODE_Z;
+					int RotRight=SDL_SCANCODE_C;
+					int HardDR=SDL_SCANCODE_X;
+					int SoftDR=SDL_SCANCODE_DOWN;
+					int MovLeft=SDL_SCANCODE_LEFT;
+					int MovRight=SDL_SCANCODE_RIGHT;
+					int HoldSpot=SDL_SCANCODE_UP;
+					int SwapButton=SDL_SCANCODE_S;
+					size_t Size;
+					Size = sizeof(uint8_t);
+					if(SDL_RWwrite(ControlsFile, &RotLeft, Size, 1) != Size) {
+						std::cout << "unable to write all data, SDL_ERROR: " << SDL_GetError() << '\n';
+					}
+					if(SDL_RWwrite(ControlsFile, &RotRight, Size, 1) != Size) {
+						std::cout << "unable to write all data, SDL_ERROR: " << SDL_GetError() << '\n';
+					}
+					if(SDL_RWwrite(ControlsFile, &HardDR, Size, 1) != Size) {
+						std::cout << "unable to write all data, SDL_ERROR: " << SDL_GetError() << '\n';
+					}
+					if(SDL_RWwrite(ControlsFile, &SoftDR, Size, 1) != Size) {
+						std::cout << "unable to write all data, SDL_ERROR: " << SDL_GetError() << '\n';
+					}
+					if(SDL_RWwrite(ControlsFile, &MovLeft, Size, 1) != Size) {
+						std::cout << "unable to write all data, SDL_ERROR: " << SDL_GetError() << '\n';
+					}
+					if(SDL_RWwrite(ControlsFile, &MovRight, Size, 1) != Size) {
+						std::cout << "unable to write all data, SDL_ERROR: " << SDL_GetError() << '\n';
+					}
+					if(SDL_RWwrite(ControlsFile, &HoldSpot, Size, 1) != Size) {
+						std::cout << "unable to write all data, SDL_ERROR: " << SDL_GetError() << '\n';
+					}
+					if(SDL_RWwrite(ControlsFile, &SwapButton, Size, 1) != Size) {
+						std::cout << "unable to write all data, SDL_ERROR: " << SDL_GetError() << '\n';
+					}
+					
+					SDL_RWclose(ControlsFile);
+					SDL_RWFromFile("Data/Controls.bin", "rb");
+				}
+			}
+		}
+
+		long SettingsTable[AmountOfSettings];
+		bool Pentomino;
+		SDL_RWops* SettingsFile;
+		if(!Quit) {
+			SDL_RWread(ControlsFile, ControlsTable, sizeof(uint8_t), 8);
+			SDL_RWclose(ControlsFile);
+
+			SettingsFile = SDL_RWFromFile("Data/Settings.bin", "rb");
+			if(!SettingsFile) {
+				std::cout << "Warning, StandardHighscores not found, Creating File SDL_ERROR" << SDL_GetError() << '\n';
+				SettingsFile = SDL_RWFromFile("Data/Settings.bin", "wb");
+				if(!SettingsFile) {
+					std::cout << "Unable to create File, SDL_ERROR: " << SDL_GetError() << "\n";
+					Quit = true;
+					SDL_Delay(5000);
+				}
+				if(!Quit) {
+					int AutoRepeat_Delay=170;
+					int AutoRepeat_Speed=50;
+					int Pentomino=0;
+					
+					size_t Size;
+					Size = sizeof(int);
+					if(SDL_RWwrite(SettingsFile, &AutoRepeat_Delay, Size, 1) != Size) {
+						std::cout << "unable to write all data, SDL_ERROR: " << SDL_GetError() << '\n';
+					}
+					if(SDL_RWwrite(SettingsFile, &AutoRepeat_Speed, Size, 1) != Size) {
+						std::cout << "unable to write all data, SDL_ERROR: " << SDL_GetError() << '\n';
+					}
+					if(SDL_RWwrite(SettingsFile, &Pentomino, Size, 1) != Size) {
+						std::cout << "unable to write all data, SDL_ERROR: " << SDL_GetError() << '\n';
+					}
+					
+					SDL_RWclose(SettingsFile);
+					SDL_RWFromFile("Data/Settings.bin", "rb");
+				}
+			}
+		}
+
+		if(!Quit) {
+			SDL_RWread(SettingsFile, SettingsTable, sizeof(uint8_t), 8);
+			SDL_RWclose(SettingsFile);
+		}
+
+		RepeatingKeyPress MoveLeftKey, MoveRightKey, MoveDownKey;
+		MoveLeftKey.SetValues(SettingsTable[2], SettingsTable[1]);
+		MoveRightKey.SetValues(SettingsTable[2], SettingsTable[1]);
+		MoveDownKey.SetValues(SettingsTable[2], SettingsTable[1]);
+
+		unsigned long LastTime;
+		LastTime = SDL_GetTicks();
+
 		while(!Quit) {
 			while(SDL_PollEvent(&Event_Handler)) {
 				if(Event_Handler.type == SDL_QUIT) {
 					Quit = true;
 				}
+				else if(Event_Handler.type == SDL_KEYDOWN) {
+					if(Event_Handler.key.keysym.sym == ControlsTable[Buttons::MovLeft]) {
+						MoveLeftKey.Press();
+					}
+					else if(Event_Handler.key.keysym.sym == ControlsTable[Buttons::MovRight]) {
+						MoveRightKey.Press();
+					}
+					else if(Event_Handler.key.keysym.sym == ControlsTable[Buttons::SoftDR]) {
+						MoveDownKey.Press();
+					}
+				}
+				else if(Event_Handler.type == SDL_KEYUP) {
+					if(Event_Handler.key.keysym.sym == ControlsTable[Buttons::MovLeft]) {
+						MoveLeftKey.UnPress();
+					}
+					else if(Event_Handler.key.keysym.sym == ControlsTable[Buttons::MovRight]) {
+						MoveRightKey.UnPress();
+					}
+					else if(Event_Handler.key.keysym.sym == ControlsTable[Buttons::SoftDR]) {
+						MoveDownKey.UnPress();
+					}
+				}
 			}
+			const Uint8* PressedKeys;
+			PressedKeys = SDL_GetKeyboardState(NULL);
 
+			unsigned long Time, Temp;
+			Temp = SDL_GetTicks();
+			Time = Temp - LastTime;
+			LastTime = Temp;
 
+			Uint8 MoveLeft, MoveRight, MoveDown;
+
+			MoveLeft = MoveLeftKey.Tick(Time);
+			MoveRight = MoveRightKey.Tick(Time);
+			MoveDown = MoveDownKey.Tick(Time);
+
+			SDL_RenderClear(Render);
+
+			Background.Draw(0, 0, Render);
+
+			Test.Draw(Render, GAME_X, 0);
+			TestPiece.Draw(Render, GAME_X, 0);
+			SDL_RenderPresent(Render);
 
 		}
-
+		close(Window, Render);
 	}
 
 	yeet;
@@ -413,7 +696,7 @@ bool init(SDL_Window** window, SDL_Renderer** Render) {
 	}
 }
 
-void Close(SDL_Window* window, SDL_Renderer* Render) {
+void close(SDL_Window* window, SDL_Renderer* Render) {
 	SDL_DestroyWindow( window );
 	SDL_DestroyRenderer(Render);
 
@@ -424,11 +707,7 @@ void Close(SDL_Window* window, SDL_Renderer* Render) {
 	std::cout << "exited succesfully\n";
 }
 
- void Tetromino::ResetShape(int length=3, int Mode=Modes::Standard) {
-	if(Pieces != nullptr) {
-		delete[] Pieces;
-		Pieces = nullptr;
-	}
+ void Tetromino::ResetShape(int length/*=3*/, int Mode/*=Modes::Standard*/) {
 	//lot of templates here, just ignore it. i wish there was a way to make all this shorter/take up less space
 	SDL_Point S_template[4];
 	S_template[0].x = -1;
@@ -440,8 +719,8 @@ void Close(SDL_Window* window, SDL_Renderer* Render) {
 	S_template[2].x = 1;
 	S_template[2].y = 1;
 
-	S_template[3].x = 0;
-	S_template[3].y = -2;
+	S_template[3].x = -2;
+	S_template[3].y = 0;
 
 
 
@@ -456,7 +735,7 @@ void Close(SDL_Window* window, SDL_Renderer* Render) {
 	Z_template[2].y = 1;
 
 	Z_template[3].x = 1;
-	Z_template[3].y = -1;
+	Z_template[3].y = 1;
 
 
 	SDL_Point L_template[4];
@@ -470,7 +749,7 @@ void Close(SDL_Window* window, SDL_Renderer* Render) {
 	L_template[2].y = 1;
 
 	L_template[3].x = -1;
-	L_template[3].y = -1;
+	L_template[3].y = 1;
 
 
 	SDL_Point J_template[4];
@@ -484,7 +763,7 @@ void Close(SDL_Window* window, SDL_Renderer* Render) {
 	J_template[2].y = 1;
 
 	J_template[3].x = 0;
-	J_template[3].y = -1;
+	J_template[3].y = 1;
 
 
 	SDL_Point I_template[4];
@@ -509,10 +788,10 @@ void Close(SDL_Window* window, SDL_Renderer* Render) {
 	T_template[1].y = 0;
 		
 	T_template[2].x = 0;
-	T_template[2].y = -1;
+	T_template[2].y = 1;
 
 	T_template[3].x = 0;
-	T_template[3].y = -2;
+	T_template[3].y = 2;
 
 
 	SDL_Point O_template[4];
@@ -530,6 +809,7 @@ void Close(SDL_Window* window, SDL_Renderer* Render) {
 
 	std::uniform_int_distribution<int> dist(0,6);
 	std::mt19937 Engine;
+	Engine.seed(time(nullptr) * 1000);
 
 	SDL_Point* Selected_Template;
 	int RandomNum;
@@ -558,20 +838,22 @@ void Close(SDL_Window* window, SDL_Renderer* Render) {
 		Selected_Template = O_template;
 	}
 
-	Pieces = new Mino[length];
+	Pieces = std::make_unique<Mino[]>(length);
 
 	for(int i=0; i<length; i++) {
 		Pieces[i].SetPosition(Selected_Template[i].x, Selected_Template[i].y);
 	}
+
+	MainPiece.SetPosition(0, 0);
 
 	Type = RandomNum;
 
 	if(Mode == Modes::Puyo) {
 		std::uniform_int_distribution<int> PuyoDist(0, Puyo_Types - 1);
 
-		int* AllowedTypes;
+		std::unique_ptr<int[]> AllowedTypes;
 
-		AllowedTypes = new int[Max_Types_In_One_Piece];
+		AllowedTypes = std::make_unique<int[]>(Max_Types_In_One_Piece);
 
 		for(int i=0; i < Max_Types_In_One_Piece; i++) {
 			AllowedTypes[i] = PuyoDist(Engine);
@@ -596,7 +878,7 @@ void Close(SDL_Window* window, SDL_Renderer* Render) {
 
 Tetromino Tetromino::Rotate(bool Dir) {
 	Tetromino Rotated;
-	Rotated = *this;
+	Rotated = (*this);
 
 	for(int i=0; i<Length; i++) {
 		Rotated.Pieces[i].Position = RotatePoint(Dir, (Rotated.Pieces[i].Position));
@@ -604,9 +886,9 @@ Tetromino Tetromino::Rotate(bool Dir) {
 	return Rotated;
 }
 
-SDL_Point* SubtractPointLists(SDL_Point* A, SDL_Point* B) {
-	SDL_Point* Result;
-	Result = new SDL_Point[5];
+std::unique_ptr<SDL_Point[]> SubtractPointLists(std::unique_ptr<SDL_Point[]>& A, std::unique_ptr<SDL_Point[]>& B) {
+	std::unique_ptr<SDL_Point[]> Result;
+	Result = std::make_unique<SDL_Point[]>(5);
 
 	Result[0].x = A[0].x - B[0].x;
 	Result[0].y = A[0].y - B[0].y;
@@ -629,21 +911,21 @@ SDL_Point* SubtractPointLists(SDL_Point* A, SDL_Point* B) {
 void Tetromino::RotateSelf(bool Dir, World* TestWith) {
 #include "SRS_File.cpp"
 
-	SDL_Point** Final_Offset;
+	std::unique_ptr<std::unique_ptr<SDL_Point[]>[]> Final_Offset;
 
 	if(Type == TetrominoList::I) {
-		Final_Offset = I_OffSet;
+		Final_Offset = std::move(I_OffSet);
 	}
 	else if(Type == TetrominoList::O) {
-		Final_Offset = O_OffSet;
+		Final_Offset = std::move(O_OffSet);
 	}
 	else {
-		Final_Offset = Other_OffSet;
+		Final_Offset = std::move(Other_OffSet);
 	}
 
 	int NewRotation;
 	
-	NewRotation = (Dir) ? (Rotation + 1) : (Rotation - 1);
+	NewRotation = (!Dir) ? (Rotation + 1) : (Rotation - 1);
 
 	if(NewRotation < Rotations::ORIGINAL) {
 		NewRotation = Rotations::LEFT;
@@ -652,7 +934,7 @@ void Tetromino::RotateSelf(bool Dir, World* TestWith) {
 		NewRotation = Rotations::ORIGINAL;
 	}
 
-	SDL_Point* Translations;
+	std::unique_ptr<SDL_Point[]> Translations;
 	Translations = SubtractPointLists(Final_Offset[Rotation], Final_Offset[NewRotation]);
 
 	bool Succes_Final = false;
@@ -665,7 +947,7 @@ void Tetromino::RotateSelf(bool Dir, World* TestWith) {
 		TestTetromino = Rotate(Dir);
 		TestTetromino.MainPiece.SetPosition(TestTetromino.MainPiece.GetPosition().x + Translations[i].x, TestTetromino.MainPiece.GetPosition().y + Translations[i].y);
 		for(int k=0; k<TestTetromino.Length; k++) {
-			if(TestWith->GetSpot(TestTetromino.Pieces[i].Position.x + TestTetromino.MainPiece.Position.x, TestTetromino.Pieces[i].Position.y + TestTetromino.MainPiece.Position.y).Active) {
+			if(TestWith->GetSpot(TestTetromino.Pieces[k].Position.x + TestTetromino.MainPiece.Position.x, TestTetromino.Pieces[k].Position.y + TestTetromino.MainPiece.Position.y).Active) {
 				Current_Succes = false;
 				break;
 			}
@@ -682,9 +964,14 @@ void Tetromino::RotateSelf(bool Dir, World* TestWith) {
 	}
 
 	if(Succes_Final) {
-		*this = Rotate(Dir);
+		Tetromino Temp;
+		Temp = Rotate(Dir);
+		for(int i=0; i<Length; i++) {
+			Pieces[i] = Temp.Pieces[i];
+		}
 		MainPiece.Position.x += Translations[Succesful_Translation].x;
 		MainPiece.Position.y += Translations[Succesful_Translation].y;
+		Rotation = NewRotation;
 	}
 }
 
@@ -692,17 +979,104 @@ bool Tetromino::MoveDown(World* TestWith) {
 	bool Succes = true;
 
 	for(int i=0; i<Length; i++) {
-		if(TestWith->GetSpot(Pieces[i].Position.x + MainPiece.Position.x, Pieces[i].Position.y + MainPiece.Position.y + 1).Active) {
+		if(TestWith->GetSpot(Pieces[i].Position.x + MainPiece.Position.x, Pieces[i].Position.y + MainPiece.Position.y - 1).Active) {
 			Succes = false;
 		}
 	}
-	if(TestWith->GetSpot(MainPiece.Position.x, MainPiece.Position.y + 1).Active) {
+	if(TestWith->GetSpot(MainPiece.Position.x, MainPiece.Position.y - 1).Active) {
 		Succes = false;
 	}
 
 	if(Succes) {
-		MainPiece.Position.y++;
+		MainPiece.Position.y--;
 	}
-
+	else {
+		TestWith->AbsorbTetromino(*this);
+	}
 	return(!Succes);
 }
+
+void Tetromino::MoveSide(int Side, World* TestWith) {
+	bool Succes = true;
+
+	for(int i=0; i<Length; i++) {
+		if(TestWith->GetSpot(Pieces[i].Position.x + MainPiece.Position.x + Side, Pieces[i].Position.y + MainPiece.Position.y).Active) {
+			Succes = false;
+		}
+	}
+	if(TestWith->GetSpot(MainPiece.Position.x + Side, MainPiece.Position.y).Active) {
+		Succes = false;
+	}
+
+	if(Succes) {
+		MainPiece.Position.x += Side;
+	}
+}
+
+int World::CheckLines(std::unique_ptr<int[]>* ReturnList) {
+	*ReturnList = std::make_unique<int[]>(y);
+	int Amount=0;
+	for(int i=0; i<y; i++) {
+		int Count=0;
+		for(int k=0; k<x; k++) {
+			if(Info[i][k].Active) {
+				Count++;
+			}
+		}
+		if(Count == x) {
+			(*ReturnList)[Amount] = i;
+			Amount++;
+		}
+	}
+	return Amount;
+}
+
+void World::ClearLine(int Line) {
+	for(int i=Line; i<(y-1); i++) {
+		Info[i] = std::move(Info[i+1]);
+		for(int k=0; k<x; k++) {
+			Info[i][k].Position.y--;
+		}
+	}
+	Info[y-1] = std::make_unique<Mino[]>(x);
+	for(int i=0; i<x; i++) {
+		Info[y-1][i].Position.x = i;
+		Info[y-1][i].Position.y = y-1;
+		Info[y-1][i].Active = false;
+	}
+}
+
+class RepeatingKeyPress {
+	double TimeSinceHold, AutoRepeat_Speed, AutoRepeat_Delay;
+	bool BeingHeld;
+	public:
+	RepeatingKeyPress() {
+		TimeSinceHold = 0;
+		AutoRepeat_Speed = 0;
+		AutoRepeat_Delay = 0;
+		BeingHeld = false;
+	}
+	void Press() {
+		BeingHeld = true;
+	}
+	void UnPress() {
+		BeingHeld = false;
+		TimeSinceHold = 0;
+	}
+	void SetValues(double AutoRepeat_SpeedSet, double AutoRepeat_DelaySet) {
+		AutoRepeat_Speed = AutoRepeat_SpeedSet;
+		AutoRepeat_Delay = AutoRepeat_DelaySet;
+	}
+	bool Tick(double Time) {
+		if(BeingHeld) {
+			TimeSinceHold += Time;
+			if(TimeSinceHold > AutoRepeat_Delay) {
+				TimeSinceHold -= AutoRepeat_Speed;
+				return true;
+			}
+		}
+	}
+	bool IsBeingHeld() {
+		return BeingHeld;
+	}
+};
