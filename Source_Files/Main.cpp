@@ -1,15 +1,28 @@
 /*
 TODO:
-add line clear and line check functions to World (DONE)
-draw graphics (DONE)
-keep track of scores
-add file handeling (DONE)
-set up settings and controls
-add the other modes
-add finishing touches
+Add HoldSpot
+Add Soft Drop
+Add Ghost Piece
+Add Upcoming Spot
+Add Basic UI
+Add Death State
+Add Death Screen
+Add Pause Screen
+Add Score Counting functionality
+Add Levels
+Add Level Selection
+Add Controls and Settings
+Add Mode Selection
+Add Basic Modes (Hidden)
+Add Swap Mode
+Add Puyo Mode
 
-IMPORTANT:
-Replace pointers with unique_ptr and make_unique
+Add Finishing Touches
+
+Ideas:
+Basic Names for Scores
+Online Scoreboard(?)
+Stickman Mode
 */
 
 #include <iostream>
@@ -148,22 +161,32 @@ int main(int argc, char* arg[]) {
 		Image Blank;
 		Blank.LoadImage("Minos/Blank.png", Render);
 
-		Image Background, Title;
+		Image Background, Title, SurroundingLine, DeadLine;
 		Background.LoadImage("BackGround.png", Render);
 		Title.LoadImage("Title.png", Render);
+		SurroundingLine.LoadImage("Surrounding_Line.png", Render);
+		DeadLine.LoadImage("Deadline.png", Render);
 
 		Background.SetColor(128, 128, 128);
 
 		std::cout << "finished loading images\n";
 
 		World MainWorld, EmptyWorld;
-		Tetromino MainTetromino;
+		Tetromino MainSet, HoldSet;
+		Tetromino *MainTetromino, *HoldTetromino;
+
+		MainTetromino = &MainSet;
+		HoldTetromino = &HoldSet;
 
 		MainWorld.SetImages(&TetrominoImages, &Blank);
 		EmptyWorld.SetImages(&TetrominoImages, &Blank);
-		MainTetromino.ResetShape();
-		MainTetromino.SetLocation(5, 22);
-		MainTetromino.SetImages(&TetrominoImages);
+
+		MainTetromino->ResetShape();
+		MainTetromino->SetLocation(5, 22);
+		MainTetromino->SetImages(&TetrominoImages);
+
+		bool HoldState;
+		HoldState = false;
 
 		int CurrentMode = Modes::Standard;
 		int CurrentState = States::Menu;
@@ -352,7 +375,7 @@ int main(int argc, char* arg[]) {
 
 			if(CurrentState == States::Game) {
 				if(MoveDownTimer > ((85.52 * pow(0.88, Level)) * 10)) {
-					if(MainTetromino.MoveDown(&MainWorld)) {
+					if(MainTetromino->MoveDown(&MainWorld)) {
 						std::unique_ptr<int[]> Check;
 						int Amount;
 						Amount = MainWorld.CheckLines(Check);
@@ -360,24 +383,25 @@ int main(int argc, char* arg[]) {
 							MainWorld.ClearLine((Check)[i]);
 						}
 						if(SettingsTable[2 /* 3 = Pentomino Setting */] == 0 /* 0=false */) {
-							MainTetromino.ResetShape(3, CurrentMode);
-							MainTetromino.SetLocation(5, 22);
-							MainTetromino.SetImages(&TetrominoImages);
+							MainTetromino->ResetShape(3, CurrentMode);
+							MainTetromino->SetLocation(5, 22);
+							MainTetromino->SetImages(&TetrominoImages);
 						}
 						else if(SettingsTable[2] == 1 /* 1=Sometimes */) {
 							std::uniform_int_distribution<int> SizeSelect(3,5);
 							std::mt19937 Engine;
 							int SelectedLength = (floor((SizeSelect(Engine) - 3) / 2) + 3);
-							MainTetromino.ResetShape(SelectedLength, CurrentMode);
-							MainTetromino.SetLocation(5, 22);
-							MainTetromino.SetImages(&TetrominoImages);
+							MainTetromino->ResetShape(SelectedLength, CurrentMode);
+							MainTetromino->SetLocation(5, 22);
+							MainTetromino->SetImages(&TetrominoImages);
 						}
 						else if(SettingsTable[2] == 2 /* 2=true */) {
-							MainTetromino.ResetShape(4, CurrentMode);
-							MainTetromino.SetLocation(5, 22);
-							MainTetromino.SetImages(&TetrominoImages);
+							MainTetromino->ResetShape(4, CurrentMode);
+							MainTetromino->SetLocation(5, 22);
+							MainTetromino->SetImages(&TetrominoImages);
 						}
 						MainWorld.SetImages(&TetrominoImages, &Blank);
+						HoldState = false;
 					}
 					MoveDownTimer = Time;
 				}
@@ -385,21 +409,21 @@ int main(int argc, char* arg[]) {
 					MoveDownTimer += Time;
 				}
 				if(KeyStates[Buttons::MovLeft]) {
-					MainTetromino.MoveSide(-1, &MainWorld);
+					MainTetromino->MoveSide(-1, &MainWorld);
 				}
 				else if(KeyStates[Buttons::MovRight]) {
-					MainTetromino.MoveSide(1, &MainWorld);
+					MainTetromino->MoveSide(1, &MainWorld);
 				}
 				if(KeyStates[Buttons::RotLeft]) {
-					MainTetromino.RotateSelf(true, &MainWorld);
+					MainTetromino->RotateSelf(true, &MainWorld);
 				}
 				else if(KeyStates[Buttons::RotRight]) {
-					MainTetromino.RotateSelf(false, &MainWorld);
+					MainTetromino->RotateSelf(false, &MainWorld);
 				}
 				if(KeyStates[Buttons::HardDR]) {
 					bool Down;
 					do {
-						Down = MainTetromino.MoveDown(&MainWorld);
+						Down = MainTetromino->MoveDown(&MainWorld);
 						if(Down) {
 							std::unique_ptr<int[]> Check;
 							int Amount;
@@ -408,27 +432,41 @@ int main(int argc, char* arg[]) {
 								MainWorld.ClearLine((Check)[i]);
 							}
 							if(SettingsTable[2 /* 3 = Pentomino Setting */] == 0 /* 0=false */) {
-								MainTetromino.ResetShape(3, CurrentMode);
-								MainTetromino.SetLocation(5, 22);
-								MainTetromino.SetImages(&TetrominoImages);
+								MainTetromino->ResetShape(3, CurrentMode);
+								MainTetromino->SetLocation(5, 22);
+								MainTetromino->SetImages(&TetrominoImages);
 							}
 							else if(SettingsTable[2] == 1 /* 1=Sometimes */) {
 								std::uniform_int_distribution<int> SizeSelect(3,5);
 								std::mt19937 Engine;
 								int SelectedLength = (floor((SizeSelect(Engine) - 3) / 2) + 3);
-								MainTetromino.ResetShape(SelectedLength, CurrentMode);
-								MainTetromino.SetLocation(5, 22);
-								MainTetromino.SetImages(&TetrominoImages);
+								MainTetromino->ResetShape(SelectedLength, CurrentMode);
+								MainTetromino->SetLocation(5, 22);
+								MainTetromino->SetImages(&TetrominoImages);
 							}
 							else if(SettingsTable[2] == 2 /* 2=true */) {
-								MainTetromino.ResetShape(4, CurrentMode);
-								MainTetromino.SetLocation(5, 22);
-								MainTetromino.SetImages(&TetrominoImages);
+								MainTetromino->ResetShape(4, CurrentMode);
+								MainTetromino->SetLocation(5, 22);
+								MainTetromino->SetImages(&TetrominoImages);
 							}
 							MainWorld.SetImages(&TetrominoImages, &Blank);
 						}
 					}
 					while(!Down);
+					HoldState = false;
+					MoveDownTimer = 0;
+				}
+				if(KeyStates[Buttons::HoldSpot]) {
+					if(!HoldState) {
+						std::swap(HoldTetromino, MainTetromino);
+						if(MainTetromino->GetRotation() == -1) {
+							MainTetromino->ResetShape(4, CurrentMode);
+							MainTetromino->SetLocation(5, 22);
+							MainTetromino->SetImages(&TetrominoImages);
+						}
+						HoldTetromino->SetLocation(5, 22);
+						HoldState = true;
+					}
 				}
 			}
 			else if(CurrentState == States::Menu) {
@@ -436,22 +474,22 @@ int main(int argc, char* arg[]) {
 					MainWorld.Reset();
 					MainWorld.SetImages(&TetrominoImages, &Blank);
 					if(SettingsTable[2 /* 3 = Pentomino Setting */] == 0 /* 0=false */) {
-						MainTetromino.ResetShape(3, CurrentMode);
-						MainTetromino.SetLocation(5, 22);
-						MainTetromino.SetImages(&TetrominoImages);
+						MainTetromino->ResetShape(3, CurrentMode);
+						MainTetromino->SetLocation(5, 22);
+						MainTetromino->SetImages(&TetrominoImages);
 					}
 					else if(SettingsTable[2] == 1 /* 1=Sometimes */) {
 						std::uniform_int_distribution<int> SizeSelect(3,5);
 						std::mt19937 Engine;
 						int SelectedLength = (floor((SizeSelect(Engine) - 3) / 2) + 3);
-						MainTetromino.ResetShape(SelectedLength, CurrentMode);
-						MainTetromino.SetLocation(5, 22);
-						MainTetromino.SetImages(&TetrominoImages);
+						MainTetromino->ResetShape(SelectedLength, CurrentMode);
+						MainTetromino->SetLocation(5, 22);
+						MainTetromino->SetImages(&TetrominoImages);
 					}
 					else if(SettingsTable[2] == 2 /* 2=true */) {
-						MainTetromino.ResetShape(4, CurrentMode);
-						MainTetromino.SetLocation(5, 22);
-						MainTetromino.SetImages(&TetrominoImages);
+						MainTetromino->ResetShape(4, CurrentMode);
+						MainTetromino->SetLocation(5, 22);
+						MainTetromino->SetImages(&TetrominoImages);
 					}
 					CurrentState = States::Game;
 				}
@@ -461,13 +499,16 @@ int main(int argc, char* arg[]) {
 
 			Background.Draw(0, 0, Render);
 
+			SurroundingLine.Draw(GAME_X-10, SCREEN_HEIGHT - 28*25 - 10, Render);
+
 			if(CurrentState == States::Game) {
 				MainWorld.Draw(Render, GAME_X, 0);
-				MainTetromino.Draw(Render, GAME_X, 0);
+				MainTetromino->Draw(Render, GAME_X, 0);
 			}
 			else {
 				EmptyWorld.Draw(Render, GAME_X, 0);
 			}
+
 			SDL_RenderPresent(Render);
 			SDL_Delay(50);
 		}

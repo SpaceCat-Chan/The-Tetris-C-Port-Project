@@ -223,6 +223,7 @@ void Tetromino::ResetShape(int length/*=3*/, int Mode/*=Modes::Standard*/) {
 	}
 
 	Pieces = std::make_unique<Mino[]>(length);
+	
 
 	for(int i=0; i<length; i++) {
 		Pieces[i].SetPosition(Selected_Template[i].x, Selected_Template[i].y);

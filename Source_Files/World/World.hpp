@@ -66,7 +66,9 @@ class Tetromino {
 	int Type, Length, Rotation;
 	public:
 	
-	Tetromino() {}
+	Tetromino() {
+		Rotation = -1; //validity checking, use GetRotation() to check if the Tetromino is Valid
+	}
 
 	~Tetromino() {}
 
