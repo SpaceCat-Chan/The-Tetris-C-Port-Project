@@ -31,6 +31,7 @@ Stickman Mode
 #include <random>
 #include <memory>
 #include <math.h>
+#include <time.h>
 
 #define SCREEN_WIDTH 800
 #define SCREEN_HEIGHT 720
@@ -181,7 +182,10 @@ int main(int argc, char* arg[]) {
 		MainWorld.SetImages(&TetrominoImages, &Blank);
 		EmptyWorld.SetImages(&TetrominoImages, &Blank);
 
-		MainTetromino->ResetShape();
+		std::mt19937 Engine;
+		Engine.seed(time(nullptr));
+
+		MainTetromino->ResetShape(Engine);
 		MainTetromino->SetLocation(5, 22);
 		MainTetromino->SetImages(&TetrominoImages);
 
@@ -382,8 +386,8 @@ int main(int argc, char* arg[]) {
 						for(int i=(Amount-1); (i >= 0) && (Amount > 0); i--) {
 							MainWorld.ClearLine((Check)[i]);
 						}
-						if(SettingsTable[2 /* 3 = Pentomino Setting */] == 0 /* 0=false */) {
-							MainTetromino->ResetShape(3, CurrentMode);
+						if(SettingsTable[2 /* 2 = Pentomino Setting */] == 0 /* 0=false */) {
+							MainTetromino->ResetShape(Engine, 3, CurrentMode);
 							MainTetromino->SetLocation(5, 22);
 							MainTetromino->SetImages(&TetrominoImages);
 						}
@@ -391,12 +395,12 @@ int main(int argc, char* arg[]) {
 							std::uniform_int_distribution<int> SizeSelect(3,5);
 							std::mt19937 Engine;
 							int SelectedLength = (floor((SizeSelect(Engine) - 3) / 2) + 3);
-							MainTetromino->ResetShape(SelectedLength, CurrentMode);
+							MainTetromino->ResetShape(Engine, SelectedLength, CurrentMode);
 							MainTetromino->SetLocation(5, 22);
 							MainTetromino->SetImages(&TetrominoImages);
 						}
 						else if(SettingsTable[2] == 2 /* 2=true */) {
-							MainTetromino->ResetShape(4, CurrentMode);
+							MainTetromino->ResetShape(Engine, 4, CurrentMode);
 							MainTetromino->SetLocation(5, 22);
 							MainTetromino->SetImages(&TetrominoImages);
 						}
@@ -432,7 +436,7 @@ int main(int argc, char* arg[]) {
 								MainWorld.ClearLine((Check)[i]);
 							}
 							if(SettingsTable[2 /* 3 = Pentomino Setting */] == 0 /* 0=false */) {
-								MainTetromino->ResetShape(3, CurrentMode);
+								MainTetromino->ResetShape(Engine, 3, CurrentMode);
 								MainTetromino->SetLocation(5, 22);
 								MainTetromino->SetImages(&TetrominoImages);
 							}
@@ -440,12 +444,12 @@ int main(int argc, char* arg[]) {
 								std::uniform_int_distribution<int> SizeSelect(3,5);
 								std::mt19937 Engine;
 								int SelectedLength = (floor((SizeSelect(Engine) - 3) / 2) + 3);
-								MainTetromino->ResetShape(SelectedLength, CurrentMode);
+								MainTetromino->ResetShape(Engine, SelectedLength, CurrentMode);
 								MainTetromino->SetLocation(5, 22);
 								MainTetromino->SetImages(&TetrominoImages);
 							}
 							else if(SettingsTable[2] == 2 /* 2=true */) {
-								MainTetromino->ResetShape(4, CurrentMode);
+								MainTetromino->ResetShape(Engine, 4, CurrentMode);
 								MainTetromino->SetLocation(5, 22);
 								MainTetromino->SetImages(&TetrominoImages);
 							}
@@ -460,7 +464,7 @@ int main(int argc, char* arg[]) {
 					if(!HoldState) {
 						std::swap(HoldTetromino, MainTetromino);
 						if(MainTetromino->GetRotation() == -1) {
-							MainTetromino->ResetShape(4, CurrentMode);
+							MainTetromino->ResetShape(Engine, 4, CurrentMode);
 							MainTetromino->SetLocation(5, 22);
 							MainTetromino->SetImages(&TetrominoImages);
 						}
@@ -474,7 +478,7 @@ int main(int argc, char* arg[]) {
 					MainWorld.Reset();
 					MainWorld.SetImages(&TetrominoImages, &Blank);
 					if(SettingsTable[2 /* 3 = Pentomino Setting */] == 0 /* 0=false */) {
-						MainTetromino->ResetShape(3, CurrentMode);
+						MainTetromino->ResetShape(Engine, 3, CurrentMode);
 						MainTetromino->SetLocation(5, 22);
 						MainTetromino->SetImages(&TetrominoImages);
 					}
@@ -482,12 +486,12 @@ int main(int argc, char* arg[]) {
 						std::uniform_int_distribution<int> SizeSelect(3,5);
 						std::mt19937 Engine;
 						int SelectedLength = (floor((SizeSelect(Engine) - 3) / 2) + 3);
-						MainTetromino->ResetShape(SelectedLength, CurrentMode);
+						MainTetromino->ResetShape(Engine, SelectedLength, CurrentMode);
 						MainTetromino->SetLocation(5, 22);
 						MainTetromino->SetImages(&TetrominoImages);
 					}
 					else if(SettingsTable[2] == 2 /* 2=true */) {
-						MainTetromino->ResetShape(4, CurrentMode);
+						MainTetromino->ResetShape(Engine, 4, CurrentMode);
 						MainTetromino->SetLocation(5, 22);
 						MainTetromino->SetImages(&TetrominoImages);
 					}

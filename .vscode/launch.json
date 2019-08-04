@@ -5,13 +5,13 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "g++ build and debug active file",
+            "name": "Build and Debug Linux",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/Build/Tetris",
+            "program": "${workspaceFolder}/Linux_Build/Tetris",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/Build/",
+            "cwd": "${workspaceFolder}/Linux_Build/",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",
@@ -22,8 +22,29 @@
                     "ignoreFailures": true
                 }
             ],
-            "preLaunchTask": "g++ build active file",
+            "preLaunchTask": "Build Linux",
             "miDebuggerPath": "/bin/gdb"
+        },
+        {
+            "name": "Build and Debug Windows",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/Windows_Build/Tetris",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/Windows_Build/",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "Build Windows",
+            "miDebuggerPath": "D:/Programs/MinGW/mingw64/bin/gdb.exe"
         }
     ]
 }

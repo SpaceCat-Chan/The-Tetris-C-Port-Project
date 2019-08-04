@@ -28,7 +28,17 @@ void Mino::SetType(int NewType) {
 }
 
 void Mino::Draw(SDL_Renderer* Render, int X_Offset, int Y_Offset) {
-	ImageFile->Draw(X_Offset + 28 * Position.x, 720 - (Y_Offset + 28 * Position.y), Render);
+	if(this) {
+		if(ImageFile) {
+			ImageFile->Draw(X_Offset + 28 * Position.x, 720 - (Y_Offset + 28 * Position.y), Render);
+		}
+		else {
+			std::cout << "WHOPPEDEAYDOO, NULLPTR ImageFile IS\n";
+		}
+	}
+	else {
+		std::cout << "WHOP WHOP, THIS IS NULLPTR\n";
+	}
 }
 
 bool& Mino::GetActive() {

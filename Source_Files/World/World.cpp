@@ -32,6 +32,7 @@ Mino& World::GetSpot(int X, int Y) {
 }
 
 void World::AbsorbTetromino(Tetromino& Absorb) {
+	std::cout << "fucking AbsorbTetromino\n";
 	for(int i=0; i<Absorb.Length; i++) {
 		Absorb.Pieces[i].Position.x += Absorb.MainPiece.Position.x;
 		Absorb.Pieces[i].Position.y += Absorb.MainPiece.Position.y;
@@ -91,7 +92,9 @@ void World::Reset() {
 	Random.GetActive() = true;
 }
 
-void Tetromino::ResetShape(int length/*=3*/, int Mode/*=Modes::Standard*/) {
+void Tetromino::ResetShape(std::mt19937 Engine, int length/*=3*/, int Mode/*=Modes::Standard*/) {
+	std::cout << "fucking ResetShape\n";
+
 	//lot of templates here, just ignore it. i wish there was a way to make all this shorter/take up less space
 	SDL_Point S_template[4];
 	S_template[0].x = -1;
@@ -192,8 +195,6 @@ void Tetromino::ResetShape(int length/*=3*/, int Mode/*=Modes::Standard*/) {
 	O_template[3].y = -1;
 
 	std::uniform_int_distribution<int> dist(0,6);
-	std::mt19937 Engine;
-	Engine.seed(time(nullptr) * 1000);
 
 	SDL_Point* Selected_Template;
 	int RandomNum;

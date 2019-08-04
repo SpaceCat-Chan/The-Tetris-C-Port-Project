@@ -2,10 +2,21 @@
     "tasks": [
         {
             "type": "shell",
-            "label": "g++ build active file",
+            "label": "Build Linux",
             "command": "make",
             "args": [
-                "all"
+                "linux"
+            ],
+            "options": {
+                //"cwd": "/bin"
+            }
+        },
+        {
+            "type": "shell",
+            "label": "Build Windows",
+            "command": "mingw32-make",
+            "args": [
+                "windows"
             ],
             "options": {
                 //"cwd": "/bin"
