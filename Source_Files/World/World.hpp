@@ -123,7 +123,7 @@ class Tetromino {
 		return *this;
 	}
 
-	void ResetShape(std::mt19937 Engine, int Length=3, int Mode=0);
+	void ResetShape(std::mt19937& Engine, int Length=3, int Mode=0);
 
 	void SetLocation(int x, int y);
 

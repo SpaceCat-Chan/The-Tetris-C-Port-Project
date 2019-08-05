@@ -27,6 +27,7 @@ Stickman Mode
 
 #include <iostream>
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_filesystem.h>
 #include <SDL2/SDL_image.h>
 #include <random>
 #include <memory>
@@ -508,6 +509,7 @@ int main(int argc, char* arg[]) {
 			if(CurrentState == States::Game) {
 				MainWorld.Draw(Render, GAME_X, 0);
 				MainTetromino->Draw(Render, GAME_X, 0);
+				DeadLine.Draw(GAME_X, 156, Render);
 			}
 			else {
 				EmptyWorld.Draw(Render, GAME_X, 0);
