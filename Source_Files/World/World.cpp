@@ -376,7 +376,7 @@ void Tetromino::RotateSelf(bool Dir, World* TestWith) {
 	}
 }
 
-bool Tetromino::MoveDown(World* TestWith) {
+bool Tetromino::MoveDown(World* TestWith, bool InhibitAbsorb/*=false*/) {
 	bool Succes = true;
 
 	for(int i=0; i<Length; i++) {
@@ -392,7 +392,9 @@ bool Tetromino::MoveDown(World* TestWith) {
 		MainPiece.GetPosition().y--;
 	}
 	else {
-		TestWith->AbsorbTetromino(*this);
+		if(!InhibitAbsorb) {
+			TestWith->AbsorbTetromino(*this);
+		}
 	}
 	return(!Succes);
 }
@@ -426,4 +428,16 @@ void Tetromino::MoveSide(int Side, World* TestWith) {
 	if(Succes) {
 		MainPiece.GetPosition().x += Side;
 	}
+}
+
+Tetromino Tetromino::MakeGhost(World& TestWith, std::unique_ptr<Image[]>* ImageList) {
+	Tetromino Temp;
+	Temp = *this;
+	Temp.SetImages(ImageList);
+	bool Result;
+	do{
+		Result = Temp.MoveDown(&TestWith, true);
+	}
+	while(!Result);
+	return Temp;
 }

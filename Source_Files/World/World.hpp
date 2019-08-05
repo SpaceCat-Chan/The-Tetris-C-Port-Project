@@ -133,7 +133,7 @@ class Tetromino {
 
 	void RotateSelf(bool Dir, World* TestWith);
 
-	bool MoveDown(World* Testwith);
+	bool MoveDown(World* Testwith, bool InhibitAbsorb=false);
 
 	void SetImages(std::unique_ptr<Image[]>* ImageList);
 
@@ -144,6 +144,8 @@ class Tetromino {
 	}
 
 	void MoveSide(int Side, World* TestWith);
+
+	Tetromino MakeGhost(World& TestWith, std::unique_ptr<Image[]>* ImageList);
 };
 
 

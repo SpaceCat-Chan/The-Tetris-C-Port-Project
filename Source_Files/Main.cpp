@@ -152,7 +152,7 @@ int main(int argc, char* arg[]) {
 		GhostImages[TetrominoList::S].LoadImage("Minos/SPieceGhost.png", Render);
 		GhostImages[TetrominoList::Z].LoadImage("Minos/ZPieceGhost.png", Render);
 		GhostImages[TetrominoList::L].LoadImage("Minos/LPieceGhost.png", Render);
-		GhostImages[TetrominoList::J].LoadImage("Minos/LPieceGhost.png", Render);
+		GhostImages[TetrominoList::J].LoadImage("Minos/JPieceGhost.png", Render);
 		GhostImages[TetrominoList::I].LoadImage("Minos/IPieceGhost.png", Render);
 		GhostImages[TetrominoList::T].LoadImage("Minos/TPieceGhost.png", Render);
 		GhostImages[TetrominoList::O].LoadImage("Minos/OPieceGhost.png", Render);
@@ -178,7 +178,7 @@ int main(int argc, char* arg[]) {
 		std::cout << "finished loading images\n";
 
 		World MainWorld, EmptyWorld;
-		Tetromino MainSet, HoldSet;
+		Tetromino MainSet, HoldSet, Ghost;
 		Tetromino *MainTetromino, *HoldTetromino;
 
 		MainTetromino = &MainSet;
@@ -417,6 +417,7 @@ int main(int argc, char* arg[]) {
 						}
 						MainWorld.SetImages(&TetrominoImages, &Blank);
 						HoldState = false;
+						Ghost = MainTetromino->MakeGhost(MainWorld, &GhostImages);
 					}
 					MoveDownTimer = Time;
 				}
@@ -425,15 +426,19 @@ int main(int argc, char* arg[]) {
 				}
 				if(KeyStates[Buttons::MovLeft]) {
 					MainTetromino->MoveSide(-1, &MainWorld);
+					Ghost = MainTetromino->MakeGhost(MainWorld, &GhostImages);
 				}
 				else if(KeyStates[Buttons::MovRight]) {
 					MainTetromino->MoveSide(1, &MainWorld);
+					Ghost = MainTetromino->MakeGhost(MainWorld, &GhostImages);
 				}
 				if(KeyStates[Buttons::RotLeft]) {
 					MainTetromino->RotateSelf(true, &MainWorld);
+					Ghost = MainTetromino->MakeGhost(MainWorld, &GhostImages);
 				}
 				else if(KeyStates[Buttons::RotRight]) {
 					MainTetromino->RotateSelf(false, &MainWorld);
+					Ghost = MainTetromino->MakeGhost(MainWorld, &GhostImages);
 				}
 				if(KeyStates[Buttons::HardDR]) {
 					bool Down;
@@ -470,6 +475,7 @@ int main(int argc, char* arg[]) {
 					while(!Down);
 					HoldState = false;
 					MoveDownTimer = 0;
+					Ghost = MainTetromino->MakeGhost(MainWorld, &GhostImages);
 				}
 				if(KeyStates[Buttons::SoftDR]) {
 					if(MainTetromino->MoveDown(&MainWorld)) {
@@ -501,15 +507,30 @@ int main(int argc, char* arg[]) {
 						HoldState = false;
 					}
 					MoveDownTimer = Time;
+					Ghost = MainTetromino->MakeGhost(MainWorld, &GhostImages);
 				}
 				if(KeyStates[Buttons::HoldSpot]) {
 					if(!HoldState) {
 						std::swap(HoldTetromino, MainTetromino);
 						if(MainTetromino->GetRotation() == -1) {
+							if(SettingsTable[2 /* 2 = Pentomino Setting */] == 0 /* 0=false */) {
 							MainTetromino->ResetShape(Engine, 3, CurrentMode);
 							MainTetromino->SetImages(&TetrominoImages);
 						}
+						else if(SettingsTable[2] == 1 /* 1=Sometimes */) {
+							std::uniform_int_distribution<int> SizeSelect(3,5);
+							std::mt19937 Engine;
+							int SelectedLength = (floor((SizeSelect(Engine) - 3) / 2) + 3);
+							MainTetromino->ResetShape(Engine, SelectedLength, CurrentMode);
+							MainTetromino->SetImages(&TetrominoImages);
+						}
+						else if(SettingsTable[2] == 2 /* 2=true */) {
+							MainTetromino->ResetShape(Engine, 4, CurrentMode);
+							MainTetromino->SetImages(&TetrominoImages);
+						}
+						}
 						MainTetromino->SetLocation(5, 22);
+						Ghost = MainTetromino->MakeGhost(MainWorld, &GhostImages);
 						HoldTetromino->SetLocation(2, 2);
 						HoldState = true;
 					}
@@ -537,6 +558,7 @@ int main(int argc, char* arg[]) {
 						MainTetromino->SetLocation(5, 22);
 						MainTetromino->SetImages(&TetrominoImages);
 					}
+					Ghost = MainTetromino->MakeGhost(MainWorld, &GhostImages);
 					CurrentState = States::Game;
 				}
 			}
@@ -552,6 +574,7 @@ int main(int argc, char* arg[]) {
 			if(CurrentState == States::Game) {
 				MainWorld.Draw(Render, GAME_X, 0);
 				MainTetromino->Draw(Render, GAME_X, 0);
+				Ghost.Draw(Render, GAME_X, 0);
 				DeadLine.Draw(GAME_X, 156, Render);
 
 				HoldSpotBackground.Draw(Render, Text_X, 300);
