@@ -1,7 +1,5 @@
 /*
 TODO:
-Add Soft Drop
-Add Ghost Piece
 Add Upcoming Spot
 Add Basic UI
 Add Death State
