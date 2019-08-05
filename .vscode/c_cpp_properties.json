@@ -56,22 +56,15 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceRoot}",
-                "${workspaceFolder}/Source_Files"
+                "${workspaceFolder}/Source_Files",
+                "${workspaceRoot}/MinGW_SDL_Dev/include/"
             ],
             "defines": [
                 "_DEBUG",
                 "UNICODE"
             ],
-            "intelliSenseMode": "msvc-x64",
-            "browse": {
-                "path": [
-                    "${workspaceRoot}",
-                    "C:/MinGW/lib/gcc/mingw32/6.3.0/include/c++"
-                ],
-                "limitSymbolsToIncludedHeaders": true,
-                "databaseFilename": ""
-            },
-            "compilerPath": "/usr/bin/gcc",
+            "intelliSenseMode": "gcc-x64",
+            "compilerPath": "D:/Programs/MinGW/mingw64/bin/g++.exe",
             "cStandard": "c11",
             "cppStandard": "c++17"
         }

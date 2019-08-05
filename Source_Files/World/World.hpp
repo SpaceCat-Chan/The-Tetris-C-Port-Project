@@ -67,6 +67,8 @@ class Tetromino {
 	public:
 	
 	Tetromino() {
+		std::mt19937 Engine;
+		ResetShape(Engine, 0);
 		Rotation = -1; //validity checking, use GetRotation() to check if the Tetromino is Valid
 	}
 

@@ -1,6 +1,5 @@
 /*
 TODO:
-Add HoldSpot
 Add Soft Drop
 Add Ghost Piece
 Add Upcoming Spot
@@ -39,7 +38,7 @@ Stickman Mode
 #define yeet return 1
 
 #define GAME_X 230
-#define Text_x 20
+#define Text_X 20
 
 /*in lua version there was a thing called ProtSettings
 moving into definitions now*/
@@ -163,11 +162,16 @@ int main(int argc, char* arg[]) {
 		Image Blank;
 		Blank.LoadImage("Minos/Blank.png", Render);
 
-		Image Background, Title, SurroundingLine, DeadLine;
+		Image Background, Title, SurroundingLine, DeadLine, Outline;
 		Background.LoadImage("BackGround.png", Render);
 		Title.LoadImage("Title.png", Render);
 		SurroundingLine.LoadImage("Surrounding_Line.png", Render);
 		DeadLine.LoadImage("Deadline.png", Render);
+		Outline.LoadImage("5_5_Outline.png", Render);
+
+		World UpcommingBackground{5,5}, HoldSpotBackground{5,5};
+		UpcommingBackground.SetImages(&TetrominoImages, &Blank);
+		HoldSpotBackground.SetImages(&TetrominoImages, &Blank);
 
 		Background.SetColor(128, 128, 128);
 
@@ -189,6 +193,7 @@ int main(int argc, char* arg[]) {
 		MainTetromino->ResetShape(Engine);
 		MainTetromino->SetLocation(5, 22);
 		MainTetromino->SetImages(&TetrominoImages);
+		HoldTetromino->SetImages(&TetrominoImages);
 
 		bool HoldState;
 		HoldState = false;
@@ -346,6 +351,9 @@ int main(int argc, char* arg[]) {
 					Quit = true;
 				}
 			}
+
+
+			//button handeling
 			const Uint8* PressedKeys;
 			PressedKeys = SDL_GetKeyboardState(NULL);
 			
@@ -377,6 +385,8 @@ int main(int argc, char* arg[]) {
 			KeyStates[Buttons::Swap] = KeyHandlerList[Buttons::Swap].Tick(Time);
 			KeyStates[Buttons::Return] = KeyHandlerList[Buttons::Return].Tick(Time);
 			KeyStates[Buttons::Escape] = KeyHandlerList[Buttons::Escape].Tick(Time);
+
+			//Logic handeling (timers, moving things, menues, all that stuff)
 
 			if(CurrentState == States::Game) {
 				if(MoveDownTimer > ((85.52 * pow(0.88, Level)) * 10)) {
@@ -465,11 +475,24 @@ int main(int argc, char* arg[]) {
 					if(!HoldState) {
 						std::swap(HoldTetromino, MainTetromino);
 						if(MainTetromino->GetRotation() == -1) {
-							MainTetromino->ResetShape(Engine, 4, CurrentMode);
-							MainTetromino->SetLocation(5, 22);
-							MainTetromino->SetImages(&TetrominoImages);
+							if(SettingsTable[2 /* 3 = Pentomino Setting */] == 0 /* 0=false */) {
+								MainTetromino->ResetShape(Engine, 3, CurrentMode);
+								MainTetromino->SetImages(&TetrominoImages);
+							}
+							else if(SettingsTable[2] == 1 /* 1=Sometimes */) {
+								std::uniform_int_distribution<int> SizeSelect(3,5);
+								std::mt19937 Engine;
+								int SelectedLength = (floor((SizeSelect(Engine) - 3) / 2) + 3);
+								MainTetromino->ResetShape(Engine, SelectedLength, CurrentMode);
+								MainTetromino->SetImages(&TetrominoImages);
+							}
+							else if(SettingsTable[2] == 2 /* 2=true */) {
+								MainTetromino->ResetShape(Engine, 4, CurrentMode);
+								MainTetromino->SetImages(&TetrominoImages);
+							}
 						}
-						HoldTetromino->SetLocation(5, 22);
+						MainTetromino->SetLocation(5, 22);
+						HoldTetromino->SetLocation(2, 2);
 						HoldState = true;
 					}
 				}
@@ -500,6 +523,8 @@ int main(int argc, char* arg[]) {
 				}
 			}
 			
+			//Drawing Logic
+
 			SDL_RenderClear(Render);
 
 			Background.Draw(0, 0, Render);
@@ -510,6 +535,12 @@ int main(int argc, char* arg[]) {
 				MainWorld.Draw(Render, GAME_X, 0);
 				MainTetromino->Draw(Render, GAME_X, 0);
 				DeadLine.Draw(GAME_X, 156, Render);
+
+				HoldSpotBackground.Draw(Render, Text_X, 300);
+				Outline.Draw(Text_X - 5, 300 - 14 - 5, Render);
+				if(HoldTetromino->GetRotation() != -1) {
+					HoldTetromino->Draw(Render, Text_X, 300);
+				}
 			}
 			else {
 				EmptyWorld.Draw(Render, GAME_X, 0);
