@@ -1,6 +1,5 @@
 /*
 TODO:
-Add Upcoming Spot
 Add Basic UI
 Add Death State
 Add Death Screen
