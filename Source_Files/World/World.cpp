@@ -260,6 +260,14 @@ void Tetromino::ResetShape(std::mt19937& Engine, int length/*=3*/, int Mode/*=Mo
 	Rotation = 0;
 }
 
+void Tetromino::ResetWithUpcomming(std::mt19937& Engine, Tetromino& Upcoming, int Length/*=3*/, int Mode/*=0*/) {
+	do{
+		*this = Upcoming;
+		Upcoming.ResetShape(Engine, Length, Mode);
+	}
+	while(Rotation == -1);
+}
+
 void Tetromino::SetLocation(int x, int y) {
 	MainPiece.SetPosition(x, y);
 }

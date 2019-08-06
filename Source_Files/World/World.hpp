@@ -79,6 +79,7 @@ class Tetromino {
 			MainPiece = Copy.MainPiece;
 			Type = Copy.Type;
 			Length = Copy.Length;
+			Rotation = Copy.Rotation;
 			Pieces = std::make_unique<Mino[]>(Length);
 
 			for(int i=0; i<Length; i++) {
@@ -92,6 +93,7 @@ class Tetromino {
 		MainPiece = Copy.MainPiece;
 		Type = Copy.Type;
 		Length = Copy.Length;
+		Rotation = Copy.Rotation;
 		Pieces = std::make_unique<Mino[]>(Length);
 
 		for(int i=0; i<Length; i++) {
@@ -105,6 +107,7 @@ class Tetromino {
 			MainPiece = Copy.MainPiece;
 			Type = Copy.Type;
 			Length = Copy.Length;
+			Rotation = Copy.Rotation;
 			Pieces = std::make_unique<Mino[]>(Length);
 
 			for(int i=0; i<Length; i++) {
@@ -117,6 +120,7 @@ class Tetromino {
 		MainPiece = Copy.MainPiece;
 		Type = Copy.Type;
 		Length = Copy.Length;
+		Rotation = Copy.Rotation;
 		Pieces = std::make_unique<Mino[]>(Length);
 
 		for(int i=0; i<Length; i++) {
@@ -126,6 +130,8 @@ class Tetromino {
 	}
 
 	void ResetShape(std::mt19937& Engine, int Length=3, int Mode=0);
+
+	void ResetWithUpcomming(std::mt19937& Engine, Tetromino& Upcoming, int Length=3, int Mode=0);
 
 	void SetLocation(int x, int y);
 
