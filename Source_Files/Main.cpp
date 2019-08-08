@@ -649,6 +649,8 @@ void close(SDL_Window* window, SDL_Renderer* Render) {
 	SDL_DestroyWindow( window );
 	SDL_DestroyRenderer(Render);
 
+	TTF_Quit();
+
 	IMG_Quit();
 
 	SDL_Quit();
