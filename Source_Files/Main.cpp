@@ -25,6 +25,7 @@ Stickman Mode
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_filesystem.h>
 #include <SDL2/SDL_image.h>
+#include <SDL2/SDL_ttf.h>
 #include <random>
 #include <memory>
 #include <math.h>
@@ -629,6 +630,10 @@ bool init(SDL_Window** window, SDL_Renderer** Render) {
 				return false;
 			}
 			else {
+				if(TTF_Init() == -1) {
+					std::cout << "Unable To Load Fontloader, TTF_ERROR: " << TTF_GetError() << '\n';
+					return false;
+				}
 				*Render = SDL_CreateRenderer(*window, -1, SDL_RENDERER_ACCELERATED);
 				if(*Render == NULL) {
 					std::cout << "unable to create Renderer, SDL_ERROR" << SDL_GetError() << '\n';

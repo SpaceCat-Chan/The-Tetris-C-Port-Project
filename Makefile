@@ -9,7 +9,7 @@ COMPILER_FLAGS = -g -ISource_Files/ -m64
 EXTRA_WINDOWS_FLAG = -IMinGW_SDL_Dev/include/
 
 #LINKER_FLAGS specifies the libraries we're linking against
-LINKER_FLAGS = -lSDL2main -lSDL2 -lSDL2_image
+LINKER_FLAGS = -lSDL2main -lSDL2 -lSDL2_image -lSDL2_ttf
 
 #Library paths, only needed for windows
 Library_Path = -LMinGW_SDL_Dev/lib/
