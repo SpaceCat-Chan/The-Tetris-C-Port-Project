@@ -91,6 +91,18 @@ void World::Reset() {
 	Random.GetActive() = true;
 }
 
+int World::LinesAbove(int LineNumber /* inclusive*/) {
+	int count=0;
+	for(int i = LineNumber; i < y; i++) {
+		for(int k = 0; k < x; k++) {
+			if(Info[i][k].Active == true) {
+				count++;
+			}
+		}
+	}
+	return count;
+}
+
 void Tetromino::ResetShape(std::mt19937& Engine, int length/*=3*/, int Mode/*=Modes::Standard*/) {
 
 	//lot of templates here, just ignore it. i wish there was a way to make all this shorter/take up less space

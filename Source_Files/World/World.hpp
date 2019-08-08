@@ -57,6 +57,8 @@ class World {
 	void ClearLine(int Line);
 
 	void Reset();
+
+	int LinesAbove(int LineNumber /* inclusive */);
 };
 
 class Tetromino {
