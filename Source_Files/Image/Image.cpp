@@ -45,6 +45,32 @@ bool Image::LoadImage(std::string Path, SDL_Renderer* Render) {
 	}
 }
 
+bool Image::LoadFromText(std::string Text, TTF_Font *Font, SDL_Renderer* Render, SDL_Color Color) {
+	Free();
+	SDL_Surface* TempImage = NULL;
+	SDL_Texture* OptimizedTemp = NULL;
+	TempImage = TTF_RenderUTF8_Blended(Font, Text.c_str(), Color);
+	if(TempImage == NULL) {
+		std::cout << "Image could not be created from text, TTF_ERROR: " << TTF_GetError() << "\nText: " << Text << '\n';
+		return false;
+	}
+	else {
+		OptimizedTemp = SDL_CreateTextureFromSurface(Render, TempImage);
+		if(OptimizedTemp == NULL) {
+			std::cout << "unable to Create Texture, SDL_ERROR: " << SDL_GetError() << "\nText: " << Text << '\n';
+			SDL_FreeSurface(TempImage);
+			return false;
+		}
+		else {
+			Width = TempImage->w;
+			Height = TempImage->h;
+			ImageFile = OptimizedTemp;
+			SDL_FreeSurface(TempImage);
+			return true;
+		}
+	}
+}
+
 void Image::Draw(int x, int y, SDL_Renderer* Render, SDL_Rect* clip, double Angle, SDL_Point* Center, SDL_RendererFlip Flip) {
 	//Set rendering space and render to screen
 	if(this) {

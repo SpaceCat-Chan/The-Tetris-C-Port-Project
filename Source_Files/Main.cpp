@@ -74,6 +74,7 @@ enum States {
 	Pause,
 	Settings,
 	Controls,
+	Dead
 };
 
 enum Modes {
@@ -174,6 +175,20 @@ int main(int argc, char* arg[]) {
 		Background.SetColor(128, 128, 128);
 
 		std::cout << "finished loading images\n";
+
+		TTF_Font *SmallFont, *BigFont;
+
+		SmallFont = TTF_OpenFont("DejaVuSans.ttf", 18); //deja vu, i have been in this bad time before.
+		BigFont = TTF_OpenFont("DejaVuSans.ttf", 36);
+
+		if(!SmallFont || !BigFont) {
+			std::cout << "unable to load Fonts, TTF_ERROR: " << TTF_GetError() << '\n';
+		}
+
+		Image DeathText;
+		DeathText.LoadFromText("You Died", BigFont, Render, {255,255,255});
+
+		std::cout << "Finished loading Fonts and Static Text\n";
 
 		World MainWorld, EmptyWorld;
 		Tetromino MainSet, HoldSet, Ghost, UpcommingTetromino;
@@ -572,6 +587,10 @@ int main(int argc, char* arg[]) {
 				}
 			}
 			
+			if(MainWorld.LinesAbove(21) > 0) {
+				CurrentState = States::Dead;
+			}
+
 			//Drawing Logic
 
 			SDL_RenderClear(Render);
@@ -599,8 +618,11 @@ int main(int argc, char* arg[]) {
 				Outline.Draw(Text_X - 3, 460 - 3, Render);
 				UpcommingTetromino.Draw(Render, Text_X, (720 - 460) - 5 * 28);
 			}
-			else {
+			else if(CurrentState == States::Menu) {
 				EmptyWorld.Draw(Render, GAME_X, 0);
+			}
+			else if(CurrentState == States::Dead) {
+				DeathText.Draw(GAME_X + 140, 100, Render);
 			}
 
 			SDL_RenderPresent(Render);
