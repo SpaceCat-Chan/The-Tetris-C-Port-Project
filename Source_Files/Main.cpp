@@ -28,6 +28,7 @@ Stickman Mode
 #include <memory>
 #include <math.h>
 #include <time.h>
+#include <sstream>
 
 #define SCREEN_WIDTH 800
 #define SCREEN_HEIGHT 720
@@ -185,6 +186,12 @@ int main(int argc, char* arg[]) {
 
 		Image DeathText;
 		DeathText.LoadFromText("You Died", BigFont, Render, {255,255,255});
+
+		Image TotalLinesText[2], Score[2], LevelText[2];
+		TotalLinesText[0].LoadFromText("TotalLines: ", SmallFont, Render, {255, 255, 255, 255});
+		Score[0].LoadFromText("Score: ", SmallFont, Render, {255, 255, 255, 255});
+		LevelText[0].LoadFromText("LevelText: ", SmallFont, Render, {255, 255, 255, 255});
+
 
 		std::cout << "Finished loading Fonts and Static Text\n";
 
@@ -355,7 +362,9 @@ int main(int argc, char* arg[]) {
 		unsigned long LastTime;
 		LastTime = SDL_GetTicks();
 
-		unsigned long Level=1, MoveDownTimer=0, TotalLines=0, TotalScore=0;
+		unsigned long Level=1, MoveDownTimer=0, TotalLines=0, TotalScore=0, LastMove=10;
+		std::string LineTypes[8] = {"Single","Double","Triple","Tetris!","SUPER\nTETRIS!","T-Spin\nSingle","T-Spin\nDouble!","T-SPIN\nTRIPLE!"};
+		std::string LastLineClear=" ";
 
 		while(!Quit) {
 			while(SDL_PollEvent(&Event_Handler)) {
@@ -400,6 +409,8 @@ int main(int argc, char* arg[]) {
 
 			//Logic handeling (timers, moving things, menues, all that stuff)
 
+			Level = TotalLines/10;
+
 			if(CurrentState == States::Game) {
 				if(MoveDownTimer > ((85.52 * pow(0.88, Level)) * 10)) {
 					if(MainTetromino->MoveDown(&MainWorld)) {
@@ -408,6 +419,17 @@ int main(int argc, char* arg[]) {
 						Amount = MainWorld.CheckLines(Check);
 						for(int i=(Amount-1); (i >= 0) && (Amount > 0); i--) {
 							MainWorld.ClearLine((Check)[i]);
+						}
+						bool IsTSpin=false;
+						TotalLines += (Amount);
+
+						//TODO: add t-spin detection
+
+						if(Amount != 0) {
+							LastLineClear = LineTypes[Amount - 1 + IsTSpin*5];
+						}
+						else {
+							LastLineClear = " ";
 						}
 						if(SettingsTable[2 /* 2 = Pentomino Setting */] == 0 /* 0=false */) {
 							MainTetromino->ResetWithUpcomming(Engine, UpcommingTetromino, 3, CurrentMode);
@@ -465,6 +487,17 @@ int main(int argc, char* arg[]) {
 							for(int i=(Amount-1); (i >= 0) && (Amount > 0); i--) {
 								MainWorld.ClearLine((Check)[i]);
 							}
+							bool IsTSpin=false;
+							TotalLines += (Amount);
+
+							//TODO: add t-spin detection
+
+							if(Amount != 0) {
+								LastLineClear = LineTypes[Amount - 1 + IsTSpin*5];
+							}
+							else {
+								LastLineClear = " ";
+							}
 							if(SettingsTable[2 /* 3 = Pentomino Setting */] == 0 /* 0=false */) {
 								MainTetromino->ResetWithUpcomming(Engine, UpcommingTetromino, 3, CurrentMode);
 								MainTetromino->SetLocation(5, 22);
@@ -500,6 +533,17 @@ int main(int argc, char* arg[]) {
 						Amount = MainWorld.CheckLines(Check);
 						for(int i=(Amount-1); (i >= 0) && (Amount > 0); i--) {
 							MainWorld.ClearLine((Check)[i]);
+						}
+						bool IsTSpin=false;
+						TotalLines += (Amount);
+
+						//TODO: add t-spin detection
+
+						if(Amount != 0) {
+							LastLineClear = LineTypes[Amount - 1 + IsTSpin*5];
+						}
+						else {
+							LastLineClear = " ";
 						}
 						if(SettingsTable[2 /* 2 = Pentomino Setting */] == 0 /* 0=false */) {
 							MainTetromino->ResetWithUpcomming(Engine, UpcommingTetromino, 3, CurrentMode);
@@ -560,6 +604,8 @@ int main(int argc, char* arg[]) {
 				if(KeyStates[Buttons::Return]) {
 					MainWorld.Reset();
 					MainWorld.SetImages(&TetrominoImages, &Blank);
+					TotalLines = 0;
+					TotalScore = 0;
 					if(SettingsTable[2 /* 3 = Pentomino Setting */] == 0 /* 0=false */) {
 						MainTetromino->ResetWithUpcomming(Engine, UpcommingTetromino, 3, CurrentMode);
 						MainTetromino->SetLocation(5, 22);
@@ -586,6 +632,9 @@ int main(int argc, char* arg[]) {
 			}
 			else if(CurrentState == States::Dead && PressedKeys[SDL_SCANCODE_RETURN]) {
 				CurrentState = States::Menu;
+				LastLineClear = " ";
+				TotalLines = 0;
+				TotalScore = 0;
 			}
 			
 			if(MainWorld.LinesAbove(20) > 0 && CurrentState == States::Game) {
@@ -600,7 +649,24 @@ int main(int argc, char* arg[]) {
 
 			SurroundingLine.Draw(GAME_X-10, SCREEN_HEIGHT - 28*25 - 10, Render);
 
+			Image LastClearImage;
+			LastClearImage.LoadFromText(LastLineClear, BigFont, Render, {255, 255, 255, 255});
+			LastClearImage.Draw(Text_X, 20, Render);
+
+			std::string TotalLinesString;
+			std::stringstream TotalLinesStringStream;
+			TotalLinesStringStream << TotalLines;
+			TotalLinesString = TotalLinesStringStream.str();
+			TotalLinesText[1].LoadFromText(TotalLinesString, SmallFont, Render, {255, 255, 255, 255});
+
+			//Heaight of text = 21
+
+			TotalLinesText[0].Draw(Text_X, 20+(21*5), Render);
+			TotalLinesText[1].Draw(GAME_X - (TotalLinesText[1].GetSize().w) - 10, 20+(21*5), Render);
+
 			if(CurrentState == States::Game) {
+
+
 				MainWorld.Draw(Render, GAME_X, 0);
 				MainTetromino->Draw(Render, GAME_X, 0);
 				Ghost.Draw(Render, GAME_X, 0);
