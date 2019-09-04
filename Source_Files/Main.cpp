@@ -1,8 +1,6 @@
 /*
 TODO:
 Add Basic UI
-Add Death State
-Add Death Screen
 Add Pause Screen
 Add Score Counting functionality
 Add Levels
@@ -368,7 +366,7 @@ int main(int argc, char* arg[]) {
 
 
 			//button handeling
-			const Uint8* PressedKeys;
+			const unsigned char* PressedKeys;
 			PressedKeys = SDL_GetKeyboardState(NULL);
 			
 			PressedKeys[ControlsTable[Buttons::MovLeft]] ? KeyHandlerList[Buttons::MovLeft].Press() : KeyHandlerList[Buttons::MovLeft].UnPress();
@@ -586,8 +584,11 @@ int main(int argc, char* arg[]) {
 					CurrentState = States::Game;
 				}
 			}
+			else if(CurrentState == States::Dead && PressedKeys[SDL_SCANCODE_RETURN]) {
+				CurrentState = States::Menu;
+			}
 			
-			if(MainWorld.LinesAbove(21) > 0) {
+			if(MainWorld.LinesAbove(20) > 0 && CurrentState == States::Game) {
 				CurrentState = States::Dead;
 			}
 
@@ -622,7 +623,8 @@ int main(int argc, char* arg[]) {
 				EmptyWorld.Draw(Render, GAME_X, 0);
 			}
 			else if(CurrentState == States::Dead) {
-				DeathText.Draw(GAME_X + 140, 100, Render);
+				MainWorld.Draw(Render, GAME_X, 0);
+				DeathText.Draw(GAME_X + 140 - DeathText.GetSize().w/2, 100, Render);
 			}
 
 			SDL_RenderPresent(Render);
