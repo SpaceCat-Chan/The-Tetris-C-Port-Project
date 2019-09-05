@@ -115,6 +115,7 @@ namespace Buttons {
 
 #include "KeyHandlers/KeyHandlers.hpp"
 
+#include "File/File.hpp"
 
 bool init(SDL_Window** window, SDL_Renderer** Render);
 
@@ -228,93 +229,41 @@ int main(int argc, char* arg[]) {
 		int MoveRight = SDLK_RIGHT;
 		int SoftDrop = SDLK_DOWN;
 
-
+		long StandardHighscoresTableStandard[5] = {0,0,0,0,0};
 		long StandardHighscoresTable[5];
-		SDL_RWops* StandardHighscores = nullptr;
-		StandardHighscores = SDL_RWFromFile("Data/StandardHighscores.bin", "rb");
-		if(!StandardHighscores) {
-			std::cout << "Warning, StandardHighscores not found, Creating File SDL_ERROR" << SDL_GetError() << '\n';
-			StandardHighscores = SDL_RWFromFile("Data/StandardHighscores.bin", "wb");
-			if(!StandardHighscores) {
-				std::cout << "Unable to create File, SDL_ERROR: " << SDL_GetError() << "\n";
-				Quit = true;
-				SDL_Delay(5000);
-			}
-			if(!Quit) {
-				int Temp=0;
-				for(int i=0; i<5; i++) {
-					size_t Size;
-					Size = sizeof(long);
-					if(SDL_RWwrite(StandardHighscores, &Temp, Size, 1) != 1) {
-						std::cout << "unable to write all data, SDL_ERROR: " << SDL_GetError() << '\n';
-					}
-				}
-				SDL_RWclose(StandardHighscores);
-				SDL_RWFromFile("Data/StandardHighscores.bin", "rb");
-			}
-		}
-		uint8_t ControlsTable[AmountOfControls];
-		SDL_RWops* ControlsFile = nullptr;
-		if(!Quit) {
-			SDL_RWread(StandardHighscores, StandardHighscoresTable, sizeof(long), 5);
-			SDL_RWclose(StandardHighscores);
 
-			ControlsFile = SDL_RWFromFile("Data/Controls.bin", "rb");
-			if(!ControlsFile) {
-				std::cout << "Warning, StandardHighscores not found, Creating File SDL_ERROR" << SDL_GetError() << '\n';
-				ControlsFile = SDL_RWFromFile("Data/Controls.bin", "wb");
-				if(!ControlsFile) {
-					std::cout << "Unable to create File, SDL_ERROR: " << SDL_GetError() << "\n";
-					Quit = true;
-					SDL_Delay(5000);
-				}
-				if(!Quit) {
-					int RotLeft=SDL_SCANCODE_Z;
-					int RotRight=SDL_SCANCODE_C;
-					int HardDR=SDL_SCANCODE_X;
-					int SoftDR=SDL_SCANCODE_DOWN;
-					int MovLeft=SDL_SCANCODE_LEFT;
-					int MovRight=SDL_SCANCODE_RIGHT;
-					int HoldSpot=SDL_SCANCODE_UP;
-					int SwapButton=SDL_SCANCODE_S;
-					size_t Size;
-					Size = sizeof(uint8_t);
-					if(SDL_RWwrite(ControlsFile, &RotLeft, Size, 1) != 1) {
-						std::cout << "unable to write all data, SDL_ERROR: " << SDL_GetError() << '\n';
-					}
-					if(SDL_RWwrite(ControlsFile, &RotRight, Size, 1) != 1) {
-						std::cout << "unable to write all data, SDL_ERROR: " << SDL_GetError() << '\n';
-					}
-					if(SDL_RWwrite(ControlsFile, &HardDR, Size, 1) != 1) {
-						std::cout << "unable to write all data, SDL_ERROR: " << SDL_GetError() << '\n';
-					}
-					if(SDL_RWwrite(ControlsFile, &SoftDR, Size, 1) != 1) {
-						std::cout << "unable to write all data, SDL_ERROR: " << SDL_GetError() << '\n';
-					}
-					if(SDL_RWwrite(ControlsFile, &MovLeft, Size, 1) != 1) {
-						std::cout << "unable to write all data, SDL_ERROR: " << SDL_GetError() << '\n';
-					}
-					if(SDL_RWwrite(ControlsFile, &MovRight, Size, 1) != 1) {
-						std::cout << "unable to write all data, SDL_ERROR: " << SDL_GetError() << '\n';
-					}
-					if(SDL_RWwrite(ControlsFile, &HoldSpot, Size, 1) != 1) {
-						std::cout << "unable to write all data, SDL_ERROR: " << SDL_GetError() << '\n';
-					}
-					if(SDL_RWwrite(ControlsFile, &SwapButton, Size, 1) != 1) {
-						std::cout << "unable to write all data, SDL_ERROR: " << SDL_GetError() << '\n';
-					}
-					
-					SDL_RWclose(ControlsFile);
-					SDL_RWFromFile("Data/Controls.bin", "rb");
-				}
-			}
+		File StandardHighscoresFile;
+		if(!StandardHighscoresFile.OpenFile("Data/StandardHighscores.bin", FileModes::Read | FileModes::Binary, StandardHighscoresTableStandard, 5, long)) {
+			SDL_Log("FileError: %s\n", StandardHighscoresFile.GetError());
 		}
+		if(!StandardHighscoresFile.Read(StandardHighscoresTable, long, 5)) {
+			SDL_Log("FileError: %s\n", StandardHighscoresFile.GetError());
+		}
+		if(!StandardHighscoresFile.CloseFile()) {
+			SDL_Log("FileError: %s\n", StandardHighscoresFile.GetError());
+		}
+
+		File ControlsFile;
+		uint8_t ControlsTable[AmountOfControls];
+		uint8_t ControlsTableStandard[AmountOfControls] = {SDL_SCANCODE_Z, SDL_SCANCODE_C, SDL_SCANCODE_X, SDL_SCANCODE_DOWN,
+															SDL_SCANCODE_LEFT, SDL_SCANCODE_RIGHT, SDL_SCANCODE_UP, SDL_SCANCODE_S};
+
+		if(!ControlsFile.OpenFile("Data/Controls.bin", FileModes::Read | FileModes::Binary, ControlsTableStandard, AmountOfControls, uint8_t)) {
+			SDL_Log("FileError: %s\n", ControlsFile.GetError());
+		}
+
+		if(!ControlsFile.Read(ControlsTable, uint8_t, AmountOfControls)) {
+			SDL_Log("FileError: %s\n", ControlsFile.GetError());
+		}
+
+		if(ControlsFile.CloseFile()) {
+			SDL_Log("FileError: %s\n", ControlsFile.GetError());
+		}
+	
 
 		long SettingsTable[AmountOfSettings];
 		SDL_RWops* SettingsFile;
 		if(!Quit) {
-			SDL_RWread(ControlsFile, ControlsTable, sizeof(uint8_t), 8);
-			SDL_RWclose(ControlsFile);
 			
 			SettingsFile = SDL_RWFromFile("Data/Settings.bin", "rb");
 			if(!SettingsFile) {
@@ -326,9 +275,9 @@ int main(int argc, char* arg[]) {
 					SDL_Delay(5000);
 				}
 				if(!Quit) {
-					int AutoRepeat_Delay=170;
-					int AutoRepeat_Speed=50;
-					int PentominoSetting=0;
+					long AutoRepeat_Delay=170;
+					long AutoRepeat_Speed=50;
+					long PentominoSetting=0;
 					
 					size_t Size;
 					Size = sizeof(long);

@@ -1,3 +1,4 @@
+#define FILE_CPP
 #include "File.hpp"
 
 File::File() {
@@ -11,7 +12,7 @@ File::~File() {
 	}
 }
 
-bool File::OpenFile(std::string FileName, int Mode, void *StanderdInfo=nullptr, int AmountOfInfo=0, int InfoSize=0) {
+bool File::OpenFile(std::string FileName, int Mode, void *StanderdInfo, int AmountOfInfo, int InfoSize) {
 	std::string OpenMode;
 	if(Mode & FileModes::Read) {
 		OpenMode += 'r';
@@ -83,3 +84,39 @@ bool File::CloseFile() {
 	return true;
 }
 
+bool File::MoveLocation(Sint64 Offset, int Whence) {
+	SDL_RWseek(CurrentFile, Offset, Whence);
+}
+
+bool File::Read(void *ReadTo, int Size, int Amount) {
+	if(CurrentFile) {
+		if(SDL_RWread(CurrentFile, ReadTo, Size, Amount) < Amount) {
+			CurrentError = SDL_GetError();
+			return false;
+		}
+		return true;
+	}
+	else {
+		CurrentError = "No file to read from";
+		return false;
+	}
+	return true;
+}
+
+bool File::Write(void *WriteFrom, int Size, int Amount) {
+	if(CurrentFile) {
+		if(SDL_RWwrite(CurrentFile, WriteFrom, Size, Amount) < Amount) {
+			CurrentError = SDL_GetError();
+			return false;
+		}
+		return true;
+	}
+	else {
+		CurrentError = "No file to write to";
+		return false;
+	}
+}
+
+std::string File::GetError() {
+	return CurrentError;
+}
