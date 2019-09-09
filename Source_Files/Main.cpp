@@ -1,8 +1,6 @@
 /*
 TODO:
 Add Basic UI
-Add Death State
-Add Death Screen
 Add Pause Screen
 Add Score Counting functionality
 Add Levels
@@ -30,6 +28,7 @@ Stickman Mode
 #include <memory>
 #include <math.h>
 #include <time.h>
+#include <sstream>
 
 #define SCREEN_WIDTH 800
 #define SCREEN_HEIGHT 720
@@ -116,6 +115,7 @@ namespace Buttons {
 
 #include "KeyHandlers/KeyHandlers.hpp"
 
+#include "File/File.hpp"
 
 bool init(SDL_Window** window, SDL_Renderer** Render);
 
@@ -188,6 +188,12 @@ int main(int argc, char* arg[]) {
 		Image DeathText;
 		DeathText.LoadFromText("You Died", BigFont, Render, {255,255,255});
 
+		Image TotalLinesText[2], Score[2], LevelText[2];
+		TotalLinesText[0].LoadFromText("TotalLines: ", SmallFont, Render, {255, 255, 255, 255});
+		Score[0].LoadFromText("Score: ", SmallFont, Render, {255, 255, 255, 255});
+		LevelText[0].LoadFromText("LevelText: ", SmallFont, Render, {255, 255, 255, 255});
+
+
 		std::cout << "Finished loading Fonts and Static Text\n";
 
 		World MainWorld, EmptyWorld;
@@ -223,93 +229,41 @@ int main(int argc, char* arg[]) {
 		int MoveRight = SDLK_RIGHT;
 		int SoftDrop = SDLK_DOWN;
 
-
+		long StandardHighscoresTableStandard[5] = {0,0,0,0,0};
 		long StandardHighscoresTable[5];
-		SDL_RWops* StandardHighscores = nullptr;
-		StandardHighscores = SDL_RWFromFile("Data/StandardHighscores.bin", "rb");
-		if(!StandardHighscores) {
-			std::cout << "Warning, StandardHighscores not found, Creating File SDL_ERROR" << SDL_GetError() << '\n';
-			StandardHighscores = SDL_RWFromFile("Data/StandardHighscores.bin", "wb");
-			if(!StandardHighscores) {
-				std::cout << "Unable to create File, SDL_ERROR: " << SDL_GetError() << "\n";
-				Quit = true;
-				SDL_Delay(5000);
-			}
-			if(!Quit) {
-				int Temp=0;
-				for(int i=0; i<5; i++) {
-					size_t Size;
-					Size = sizeof(long);
-					if(SDL_RWwrite(StandardHighscores, &Temp, Size, 1) != 1) {
-						std::cout << "unable to write all data, SDL_ERROR: " << SDL_GetError() << '\n';
-					}
-				}
-				SDL_RWclose(StandardHighscores);
-				SDL_RWFromFile("Data/StandardHighscores.bin", "rb");
-			}
-		}
-		uint8_t ControlsTable[AmountOfControls];
-		SDL_RWops* ControlsFile = nullptr;
-		if(!Quit) {
-			SDL_RWread(StandardHighscores, StandardHighscoresTable, sizeof(long), 5);
-			SDL_RWclose(StandardHighscores);
 
-			ControlsFile = SDL_RWFromFile("Data/Controls.bin", "rb");
-			if(!ControlsFile) {
-				std::cout << "Warning, StandardHighscores not found, Creating File SDL_ERROR" << SDL_GetError() << '\n';
-				ControlsFile = SDL_RWFromFile("Data/Controls.bin", "wb");
-				if(!ControlsFile) {
-					std::cout << "Unable to create File, SDL_ERROR: " << SDL_GetError() << "\n";
-					Quit = true;
-					SDL_Delay(5000);
-				}
-				if(!Quit) {
-					int RotLeft=SDL_SCANCODE_Z;
-					int RotRight=SDL_SCANCODE_C;
-					int HardDR=SDL_SCANCODE_X;
-					int SoftDR=SDL_SCANCODE_DOWN;
-					int MovLeft=SDL_SCANCODE_LEFT;
-					int MovRight=SDL_SCANCODE_RIGHT;
-					int HoldSpot=SDL_SCANCODE_UP;
-					int SwapButton=SDL_SCANCODE_S;
-					size_t Size;
-					Size = sizeof(uint8_t);
-					if(SDL_RWwrite(ControlsFile, &RotLeft, Size, 1) != 1) {
-						std::cout << "unable to write all data, SDL_ERROR: " << SDL_GetError() << '\n';
-					}
-					if(SDL_RWwrite(ControlsFile, &RotRight, Size, 1) != 1) {
-						std::cout << "unable to write all data, SDL_ERROR: " << SDL_GetError() << '\n';
-					}
-					if(SDL_RWwrite(ControlsFile, &HardDR, Size, 1) != 1) {
-						std::cout << "unable to write all data, SDL_ERROR: " << SDL_GetError() << '\n';
-					}
-					if(SDL_RWwrite(ControlsFile, &SoftDR, Size, 1) != 1) {
-						std::cout << "unable to write all data, SDL_ERROR: " << SDL_GetError() << '\n';
-					}
-					if(SDL_RWwrite(ControlsFile, &MovLeft, Size, 1) != 1) {
-						std::cout << "unable to write all data, SDL_ERROR: " << SDL_GetError() << '\n';
-					}
-					if(SDL_RWwrite(ControlsFile, &MovRight, Size, 1) != 1) {
-						std::cout << "unable to write all data, SDL_ERROR: " << SDL_GetError() << '\n';
-					}
-					if(SDL_RWwrite(ControlsFile, &HoldSpot, Size, 1) != 1) {
-						std::cout << "unable to write all data, SDL_ERROR: " << SDL_GetError() << '\n';
-					}
-					if(SDL_RWwrite(ControlsFile, &SwapButton, Size, 1) != 1) {
-						std::cout << "unable to write all data, SDL_ERROR: " << SDL_GetError() << '\n';
-					}
-					
-					SDL_RWclose(ControlsFile);
-					SDL_RWFromFile("Data/Controls.bin", "rb");
-				}
-			}
+		File StandardHighscoresFile;
+		if(!StandardHighscoresFile.OpenFile("Data/StandardHighscores.bin", FileModes::Read | FileModes::Binary, StandardHighscoresTableStandard, 5, long)) {
+			SDL_Log("FileError: %s\n", StandardHighscoresFile.GetError());
 		}
+		if(!StandardHighscoresFile.Read(StandardHighscoresTable, long, 5)) {
+			SDL_Log("FileError: %s\n", StandardHighscoresFile.GetError());
+		}
+		if(!StandardHighscoresFile.CloseFile()) {
+			SDL_Log("FileError: %s\n", StandardHighscoresFile.GetError());
+		}
+
+		File ControlsFile;
+		uint8_t ControlsTable[AmountOfControls];
+		uint8_t ControlsTableStandard[AmountOfControls] = {SDL_SCANCODE_Z, SDL_SCANCODE_C, SDL_SCANCODE_X, SDL_SCANCODE_DOWN,
+															SDL_SCANCODE_LEFT, SDL_SCANCODE_RIGHT, SDL_SCANCODE_UP, SDL_SCANCODE_S};
+
+		if(!ControlsFile.OpenFile("Data/Controls.bin", FileModes::Read | FileModes::Binary, ControlsTableStandard, AmountOfControls, uint8_t)) {
+			SDL_Log("FileError: %s\n", ControlsFile.GetError());
+		}
+
+		if(!ControlsFile.Read(ControlsTable, uint8_t, AmountOfControls)) {
+			SDL_Log("FileError: %s\n", ControlsFile.GetError());
+		}
+
+		if(ControlsFile.CloseFile()) {
+			SDL_Log("FileError: %s\n", ControlsFile.GetError());
+		}
+	
 
 		long SettingsTable[AmountOfSettings];
 		SDL_RWops* SettingsFile;
 		if(!Quit) {
-			SDL_RWread(ControlsFile, ControlsTable, sizeof(uint8_t), 8);
-			SDL_RWclose(ControlsFile);
 			
 			SettingsFile = SDL_RWFromFile("Data/Settings.bin", "rb");
 			if(!SettingsFile) {
@@ -321,9 +275,9 @@ int main(int argc, char* arg[]) {
 					SDL_Delay(5000);
 				}
 				if(!Quit) {
-					int AutoRepeat_Delay=170;
-					int AutoRepeat_Speed=50;
-					int PentominoSetting=0;
+					long AutoRepeat_Delay=170;
+					long AutoRepeat_Speed=50;
+					long PentominoSetting=0;
 					
 					size_t Size;
 					Size = sizeof(long);
@@ -357,7 +311,9 @@ int main(int argc, char* arg[]) {
 		unsigned long LastTime;
 		LastTime = SDL_GetTicks();
 
-		unsigned long Level=1, MoveDownTimer=0, TotalLines=0, TotalScore=0;
+		unsigned long Level=1, MoveDownTimer=0, TotalLines=0, TotalScore=0, LastMove=10;
+		std::string LineTypes[8] = {"Single","Double","Triple","Tetris!","SUPER\nTETRIS!","T-Spin\nSingle","T-Spin\nDouble!","T-SPIN\nTRIPLE!"};
+		std::string LastLineClear=" ";
 
 		while(!Quit) {
 			while(SDL_PollEvent(&Event_Handler)) {
@@ -368,7 +324,7 @@ int main(int argc, char* arg[]) {
 
 
 			//button handeling
-			const Uint8* PressedKeys;
+			const unsigned char* PressedKeys;
 			PressedKeys = SDL_GetKeyboardState(NULL);
 			
 			PressedKeys[ControlsTable[Buttons::MovLeft]] ? KeyHandlerList[Buttons::MovLeft].Press() : KeyHandlerList[Buttons::MovLeft].UnPress();
@@ -402,6 +358,8 @@ int main(int argc, char* arg[]) {
 
 			//Logic handeling (timers, moving things, menues, all that stuff)
 
+			Level = TotalLines/10;
+
 			if(CurrentState == States::Game) {
 				if(MoveDownTimer > ((85.52 * pow(0.88, Level)) * 10)) {
 					if(MainTetromino->MoveDown(&MainWorld)) {
@@ -410,6 +368,17 @@ int main(int argc, char* arg[]) {
 						Amount = MainWorld.CheckLines(Check);
 						for(int i=(Amount-1); (i >= 0) && (Amount > 0); i--) {
 							MainWorld.ClearLine((Check)[i]);
+						}
+						bool IsTSpin=false;
+						TotalLines += (Amount);
+
+						//TODO: add t-spin detection
+
+						if(Amount != 0) {
+							LastLineClear = LineTypes[Amount - 1 + IsTSpin*5];
+						}
+						else {
+							LastLineClear = " ";
 						}
 						if(SettingsTable[2 /* 2 = Pentomino Setting */] == 0 /* 0=false */) {
 							MainTetromino->ResetWithUpcomming(Engine, UpcommingTetromino, 3, CurrentMode);
@@ -467,6 +436,17 @@ int main(int argc, char* arg[]) {
 							for(int i=(Amount-1); (i >= 0) && (Amount > 0); i--) {
 								MainWorld.ClearLine((Check)[i]);
 							}
+							bool IsTSpin=false;
+							TotalLines += (Amount);
+
+							//TODO: add t-spin detection
+
+							if(Amount != 0) {
+								LastLineClear = LineTypes[Amount - 1 + IsTSpin*5];
+							}
+							else {
+								LastLineClear = " ";
+							}
 							if(SettingsTable[2 /* 3 = Pentomino Setting */] == 0 /* 0=false */) {
 								MainTetromino->ResetWithUpcomming(Engine, UpcommingTetromino, 3, CurrentMode);
 								MainTetromino->SetLocation(5, 22);
@@ -502,6 +482,17 @@ int main(int argc, char* arg[]) {
 						Amount = MainWorld.CheckLines(Check);
 						for(int i=(Amount-1); (i >= 0) && (Amount > 0); i--) {
 							MainWorld.ClearLine((Check)[i]);
+						}
+						bool IsTSpin=false;
+						TotalLines += (Amount);
+
+						//TODO: add t-spin detection
+
+						if(Amount != 0) {
+							LastLineClear = LineTypes[Amount - 1 + IsTSpin*5];
+						}
+						else {
+							LastLineClear = " ";
 						}
 						if(SettingsTable[2 /* 2 = Pentomino Setting */] == 0 /* 0=false */) {
 							MainTetromino->ResetWithUpcomming(Engine, UpcommingTetromino, 3, CurrentMode);
@@ -562,6 +553,8 @@ int main(int argc, char* arg[]) {
 				if(KeyStates[Buttons::Return]) {
 					MainWorld.Reset();
 					MainWorld.SetImages(&TetrominoImages, &Blank);
+					TotalLines = 0;
+					TotalScore = 0;
 					if(SettingsTable[2 /* 3 = Pentomino Setting */] == 0 /* 0=false */) {
 						MainTetromino->ResetWithUpcomming(Engine, UpcommingTetromino, 3, CurrentMode);
 						MainTetromino->SetLocation(5, 22);
@@ -586,8 +579,14 @@ int main(int argc, char* arg[]) {
 					CurrentState = States::Game;
 				}
 			}
+			else if(CurrentState == States::Dead && PressedKeys[SDL_SCANCODE_RETURN]) {
+				CurrentState = States::Menu;
+				LastLineClear = " ";
+				TotalLines = 0;
+				TotalScore = 0;
+			}
 			
-			if(MainWorld.LinesAbove(21) > 0) {
+			if(MainWorld.LinesAbove(20) > 0 && CurrentState == States::Game) {
 				CurrentState = States::Dead;
 			}
 
@@ -599,7 +598,24 @@ int main(int argc, char* arg[]) {
 
 			SurroundingLine.Draw(GAME_X-10, SCREEN_HEIGHT - 28*25 - 10, Render);
 
+			Image LastClearImage;
+			LastClearImage.LoadFromText(LastLineClear, BigFont, Render, {255, 255, 255, 255});
+			LastClearImage.Draw(Text_X, 20, Render);
+
+			std::string TotalLinesString;
+			std::stringstream TotalLinesStringStream;
+			TotalLinesStringStream << TotalLines;
+			TotalLinesString = TotalLinesStringStream.str();
+			TotalLinesText[1].LoadFromText(TotalLinesString, SmallFont, Render, {255, 255, 255, 255});
+
+			//Heaight of text = 21
+
+			TotalLinesText[0].Draw(Text_X, 20+(21*5), Render);
+			TotalLinesText[1].Draw(GAME_X - (TotalLinesText[1].GetSize().w) - 10, 20+(21*5), Render);
+
 			if(CurrentState == States::Game) {
+
+
 				MainWorld.Draw(Render, GAME_X, 0);
 				MainTetromino->Draw(Render, GAME_X, 0);
 				Ghost.Draw(Render, GAME_X, 0);
@@ -622,7 +638,8 @@ int main(int argc, char* arg[]) {
 				EmptyWorld.Draw(Render, GAME_X, 0);
 			}
 			else if(CurrentState == States::Dead) {
-				DeathText.Draw(GAME_X + 140, 100, Render);
+				MainWorld.Draw(Render, GAME_X, 0);
+				DeathText.Draw(GAME_X + 140 - DeathText.GetSize().w/2, 100, Render);
 			}
 
 			SDL_RenderPresent(Render);
