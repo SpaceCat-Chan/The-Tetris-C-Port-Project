@@ -1,5 +1,5 @@
 #OBJS specifies which files to compile as part of the project
-OBJS = Source_Files/Main.cpp Source_Files/World/World.cpp Source_Files/Mino/Mino.cpp Source_Files/Image/Image.cpp Source_Files/KeyHandlers/KeyHandlers.cpp Source_Files/File/File.cpp
+OBJS = Source_Files/Main.cpp Source_Files/World/World.cpp Source_Files/Mino/Mino.cpp SDL-Helper-Libraries/Image/Image.cpp SDL-Helper-Libraries/KeyHandlers/KeyHandlers.cpp SDL-Helper-Libraries/File/File.cpp
 
 #CC specifies which compiler we're using
 CC = g++
@@ -9,7 +9,8 @@ COMPILER_FLAGS = -g -ISource_Files/ -m64
 EXTRA_WINDOWS_FLAG = -IMinGW_SDL_Dev/include/
 
 #LINKER_FLAGS specifies the libraries we're linking against
-LINKER_FLAGS = -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_ttf
+LINKER_FLAGS = -lSDL2main -lSDL2 -lSDL2_image -lSDL2_ttf
+WINDOWS_LINKER_FLAGS = -lmingw32
 
 #Library paths, only needed for windows
 Library_Path = -LMinGW_SDL_Dev/lib/
@@ -23,4 +24,4 @@ linux : $(OBJS)
 	$(CC) $(OBJS) $(COMPILER_FLAGS) $(LINKER_FLAGS) -o $(OBJ_NAME)
 
 windows : $(OBJS)
-	$(CC) $(OBJS) $(COMPILER_FLAGS) $(EXTRA_WINDOWS_FLAG) $(Library_Path) $(LINKER_FLAGS) -o $(WINDOWS_NAME)
+	$(CC) $(OBJS) $(COMPILER_FLAGS) $(EXTRA_WINDOWS_FLAG) $(Library_Path) ${WINDOWS_LINKER_FLAGS} $(LINKER_FLAGS) -o $(WINDOWS_NAME)

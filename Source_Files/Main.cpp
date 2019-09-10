@@ -109,13 +109,13 @@ namespace Buttons {
 
 #include "Mino/Mino.hpp"
 
-#include "Image/Image.hpp"
+#include "../SDL-Helper-Libraries/Image/Image.hpp"
 
 #include "World/World.hpp"
 
-#include "KeyHandlers/KeyHandlers.hpp"
+#include "../SDL-Helper-Libraries/KeyHandlers/KeyHandlers.hpp"
 
-#include "File/File.hpp"
+#include "../SDL-Helper-Libraries/File/File.hpp"
 
 bool init(SDL_Window** window, SDL_Renderer** Render);
 
@@ -234,13 +234,13 @@ int main(int argc, char* arg[]) {
 
 		File StandardHighscoresFile;
 		if(!StandardHighscoresFile.OpenFile("Data/StandardHighscores.bin", FileModes::Read | FileModes::Binary, StandardHighscoresTableStandard, 5, long)) {
-			SDL_Log("FileError: %s\n", StandardHighscoresFile.GetError());
+			SDL_Log("FileError: %s\n", StandardHighscoresFile.GetError().c_str());
 		}
 		if(!StandardHighscoresFile.Read(StandardHighscoresTable, long, 5)) {
-			SDL_Log("FileError: %s\n", StandardHighscoresFile.GetError());
+			SDL_Log("FileError: %s\n", StandardHighscoresFile.GetError().c_str());
 		}
 		if(!StandardHighscoresFile.CloseFile()) {
-			SDL_Log("FileError: %s\n", StandardHighscoresFile.GetError());
+			SDL_Log("FileError: %s\n", StandardHighscoresFile.GetError().c_str());
 		}
 
 		File ControlsFile;
@@ -249,15 +249,15 @@ int main(int argc, char* arg[]) {
 															SDL_SCANCODE_LEFT, SDL_SCANCODE_RIGHT, SDL_SCANCODE_UP, SDL_SCANCODE_S};
 
 		if(!ControlsFile.OpenFile("Data/Controls.bin", FileModes::Read | FileModes::Binary, ControlsTableStandard, AmountOfControls, uint8_t)) {
-			SDL_Log("FileError: %s\n", ControlsFile.GetError());
+			SDL_Log("FileError: %s\n", ControlsFile.GetError().c_str());
 		}
 
 		if(!ControlsFile.Read(ControlsTable, uint8_t, AmountOfControls)) {
-			SDL_Log("FileError: %s\n", ControlsFile.GetError());
+			SDL_Log("FileError: %s\n", ControlsFile.GetError().c_str());
 		}
 
 		if(ControlsFile.CloseFile()) {
-			SDL_Log("FileError: %s\n", ControlsFile.GetError());
+			SDL_Log("FileError: %s\n", ControlsFile.GetError().c_str());
 		}
 	
 

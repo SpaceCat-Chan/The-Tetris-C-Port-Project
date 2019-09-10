@@ -3,7 +3,7 @@
 
 #include <SDL2/SDL.h>
 #include <memory>
-#include "Image/Image.hpp"
+#include "../../SDL-Helper-Libraries/Image/Image.hpp"
 
 class Mino {
 	friend class Tetromino;
