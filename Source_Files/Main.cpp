@@ -291,6 +291,8 @@ int main(int argc, char* arg[]) {
 		std::string LineTypes[8] = {"Single","Double","Triple","Tetris!","SUPER\nTETRIS!","T-Spin\nSingle","T-Spin\nDouble!","T-SPIN\nTRIPLE!"};
 		std::string LastLineClear=" ";
 
+		unsigned long ScoreList[] = {Single, Double, Triple, Tetris, STetris};
+
 		while(!Quit) {
 			while(SDL_PollEvent(&Event_Handler)) {
 				if(Event_Handler.type == SDL_QUIT) {
@@ -347,7 +349,9 @@ int main(int argc, char* arg[]) {
 						}
 						bool IsTSpin=false;
 						TotalLines += (Amount);
-
+						if(Amount > 0) {
+							TotalScore += (ScoreList[Amount-1] * (Level+1) * (IsTSpin ? Spin_Multiplier : 1));
+						}
 						//TODO: add t-spin detection
 
 						if(Amount != 0) {
@@ -414,6 +418,9 @@ int main(int argc, char* arg[]) {
 							}
 							bool IsTSpin=false;
 							TotalLines += (Amount);
+							if(Amount > 0) {
+								TotalScore += ScoreList[Amount-1] * (Level+1) * (IsTSpin ? Spin_Multiplier : 1);
+							}
 
 							//TODO: add t-spin detection
 
@@ -461,6 +468,9 @@ int main(int argc, char* arg[]) {
 						}
 						bool IsTSpin=false;
 						TotalLines += (Amount);
+						if(Amount > 0) {
+							TotalScore += ScoreList[Amount-1] * (Level+1) * (IsTSpin ? Spin_Multiplier : 1);
+						}
 
 						//TODO: add t-spin detection
 
@@ -578,16 +588,24 @@ int main(int argc, char* arg[]) {
 			LastClearImage.LoadFromText(LastLineClear, BigFont, Render, {255, 255, 255, 255});
 			LastClearImage.Draw(Text_X, 20, Render);
 
-			std::string TotalLinesString;
-			std::stringstream TotalLinesStringStream;
+			std::string TotalLinesString, ScoreString;
+			std::stringstream TotalLinesStringStream, ScoreStringStream;
+
 			TotalLinesStringStream << TotalLines;
 			TotalLinesString = TotalLinesStringStream.str();
 			TotalLinesText[1].LoadFromText(TotalLinesString, SmallFont, Render, {255, 255, 255, 255});
+
+			ScoreStringStream << TotalScore;
+			ScoreString = ScoreStringStream.str();
+			Score[1].LoadFromText(ScoreString, SmallFont, Render, {255, 255, 255, 255});
+
 
 			//Heaight of text = 21
 
 			TotalLinesText[0].Draw(Text_X, 20+(21*5), Render);
 			TotalLinesText[1].Draw(GAME_X - (TotalLinesText[1].GetSize().w) - 10, 20+(21*5), Render);
+			Score[0].Draw(Text_X, 20+(21*6), Render);
+			Score[1].Draw(GAME_X - (Score[1].GetSize().w) - 10, 20+(21*6), Render);
 
 			if(CurrentState == States::Game) {
 
