@@ -104,7 +104,12 @@ int World::LinesAbove(int LineNumber /* inclusive*/) {
 }
 
 void Tetromino::ResetShape(std::mt19937& Engine, int length/*=3*/, int Mode/*=Modes::Standard*/) {
-
+	if(length == -1) {
+		std::mt19937 Engine;
+		ResetShape(Engine, 0);
+		Rotation = -1; //validity checking, use GetRotation() to check if the Tetromino is Valid
+		return;
+	}
 	//lot of templates here, just ignore it. i wish there was a way to make all this shorter/take up less space
 	SDL_Point S_template[4];
 	S_template[0].x = -1;
@@ -240,6 +245,7 @@ void Tetromino::ResetShape(std::mt19937& Engine, int length/*=3*/, int Mode/*=Mo
 		Pieces[i].SetPosition(Selected_Template[i].x, Selected_Template[i].y);
 	}
 
+	
 	MainPiece.SetPosition(0, 0);
 
 	Type = RandomNum;

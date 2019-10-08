@@ -257,7 +257,7 @@ int main(int argc, char* arg[]) {
 			SDL_Log("FileError: %s\n", ControlsFile.GetError().c_str());
 		}
 
-		if(ControlsFile.CloseFile()) {
+		if(!ControlsFile.CloseFile()) {
 			SDL_Log("FileError: %s\n", ControlsFile.GetError().c_str());
 		}
 	
@@ -275,7 +275,7 @@ int main(int argc, char* arg[]) {
 		}
 
 		if(!SettingsFile.CloseFile()) {
-			SDL_Log("FileError %s\n", SettingsFile.GetError().c_str());
+			SDL_Log("FileError: %s\n", SettingsFile.GetError().c_str());
 		}
 
 		KeyHandler KeyHandlerList[AmountOfControls + 2];
@@ -570,6 +570,7 @@ int main(int argc, char* arg[]) {
 				LastLineClear = " ";
 				TotalLines = 0;
 				TotalScore = 0;
+				HoldTetromino->ResetShape(Engine, -1, CurrentMode);
 			}
 			
 			if(MainWorld.LinesAbove(20) > 0 && CurrentState == States::Game) {
