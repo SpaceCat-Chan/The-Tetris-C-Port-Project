@@ -229,6 +229,7 @@ int main(int argc, char* arg[]) {
 		int MoveRight = SDLK_RIGHT;
 		int SoftDrop = SDLK_DOWN;
 
+
 		long StandardHighscoresTableStandard[5] = {0,0,0,0,0};
 		long StandardHighscoresTable[5];
 
@@ -261,45 +262,20 @@ int main(int argc, char* arg[]) {
 		}
 	
 
+		File SettingsFile;
+		long SettingsTableStandard[AmountOfSettings] = {170, 50, 0};
 		long SettingsTable[AmountOfSettings];
-		SDL_RWops* SettingsFile;
-		if(!Quit) {
-			
-			SettingsFile = SDL_RWFromFile("Data/Settings.bin", "rb");
-			if(!SettingsFile) {
-				std::cout << "Warning, StandardHighscores not found, Creating File SDL_ERROR" << SDL_GetError() << '\n';
-				SettingsFile = SDL_RWFromFile("Data/Settings.bin", "wb");
-				if(!SettingsFile) {
-					std::cout << "Unable to create File, SDL_ERROR: " << SDL_GetError() << "\n";
-					Quit = true;
-					SDL_Delay(5000);
-				}
-				if(!Quit) {
-					long AutoRepeat_Delay=170;
-					long AutoRepeat_Speed=50;
-					long PentominoSetting=0;
-					
-					size_t Size;
-					Size = sizeof(long);
-					if(SDL_RWwrite(SettingsFile, &AutoRepeat_Delay, Size, 1) != 1) {
-						std::cout << "unable to write all data, SDL_ERROR: " << SDL_GetError() << '\n';
-					}
-					if(SDL_RWwrite(SettingsFile, &AutoRepeat_Speed, Size, 1) != 1) {
-						std::cout << "unable to write all data, SDL_ERROR: " << SDL_GetError() << '\n';
-					}
-					if(SDL_RWwrite(SettingsFile, &PentominoSetting, Size, 1) != 1) {
-						std::cout << "unable to write all data, SDL_ERROR: " << SDL_GetError() << '\n';
-					}
-					
-					SDL_RWclose(SettingsFile);
-					SDL_RWFromFile("Data/Settings.bin", "rb");
-				}
-			}
+
+		if(!SettingsFile.OpenFile("Data/Settings.bin", FileModes::Read | FileModes::Binary, SettingsTableStandard, AmountOfSettings, long)) {
+			SDL_Log("FileError: %s\n", ControlsFile.GetError().c_str());
 		}
 
-		if(!Quit) {
-			SDL_RWread(SettingsFile, SettingsTable, sizeof(long), AmountOfSettings);
-			SDL_RWclose(SettingsFile);
+		if(!SettingsFile.Read(SettingsTable, long, AmountOfSettings)) {
+			SDL_Log("FileError: %s\n", ControlsFile.GetError().c_str());
+		}
+
+		if(!SettingsFile.CloseFile()) {
+			SDL_Log("FileError %s\n", SettingsFile.GetError().c_str());
 		}
 
 		KeyHandler KeyHandlerList[AmountOfControls + 2];
