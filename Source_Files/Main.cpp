@@ -674,7 +674,7 @@ int main(int argc, char* arg[]) {
 				int w, h;
 				TTF_SizeUTF8(SmallFont, Temp2.str().c_str(), &w, &h);
 
-				WriteNumber(Render, HighscoresTable[i], Numbers, GAME_X - w, SCREEN_HEIGHT - ((5-i)*h), SmallFont);
+				WriteNumber(Render, HighscoresTable[i], Numbers, GAME_X - w - 10, SCREEN_HEIGHT - ((5-i)*h), SmallFont);
 				HighscoresText[i].Draw(Text_X+3, SCREEN_HEIGHT - ((5-i)*h), Render);
 			}
 
