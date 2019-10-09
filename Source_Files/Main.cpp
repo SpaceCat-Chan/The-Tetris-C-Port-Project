@@ -29,6 +29,7 @@ Stickman Mode
 #include <math.h>
 #include <time.h>
 #include <sstream>
+#include <algorithm>
 
 #define SCREEN_WIDTH 800
 #define SCREEN_HEIGHT 720
@@ -39,11 +40,11 @@ Stickman Mode
 
 /*in lua version there was a thing called ProtSettings
 moving into definitions now*/
-#define Single 100
-#define Double 300
-#define Triple 1200
-#define Tetris 3200
-#define STetris 7000
+#define Single 1
+#define Double 3
+#define Triple 10
+#define Tetris 32
+#define STetris 70
 #define Spin_Multiplier 4
 
 
@@ -116,6 +117,28 @@ namespace Buttons {
 #include "../SDL-Helper-Libraries/KeyHandlers/KeyHandlers.hpp"
 
 #include "../SDL-Helper-Libraries/File/File.hpp"
+
+
+void WriteNumber(SDL_Renderer *Render, long Number, Image *Numbers, int x, int y, TTF_Font *font) {
+	std::stringstream ToString;
+	ToString << Number;
+	unsigned long Distance=0;
+	for(auto& Char : ToString.str()) {
+		if(Char == '\00') {
+			continue;
+		}
+		int TempNumber;
+		std::stringstream Temp;
+		Temp << Char;
+		Temp >> TempNumber;
+		Numbers[TempNumber].Draw(Distance + x, y, Render);
+		char TempChar[2] = {Char, '\00'};
+		int w,h;
+		TTF_SizeUTF8(font, TempChar, &w, &h);
+		Distance += w;
+	}
+}
+
 
 bool init(SDL_Window** window, SDL_Renderer** Render);
 
@@ -231,13 +254,13 @@ int main(int argc, char* arg[]) {
 
 
 		long StandardHighscoresTableStandard[5] = {0,0,0,0,0};
-		long StandardHighscoresTable[5];
+		long HighscoresTable[6] = {0, 0, 0, 0, 0, 0};
 
 		File StandardHighscoresFile;
 		if(!StandardHighscoresFile.OpenFile("Data/StandardHighscores.bin", FileModes::Read | FileModes::Binary, StandardHighscoresTableStandard, 5, long)) {
 			SDL_Log("FileError: %s\n", StandardHighscoresFile.GetError().c_str());
 		}
-		if(!StandardHighscoresFile.Read(StandardHighscoresTable, long, 5)) {
+		if(!StandardHighscoresFile.Read(HighscoresTable, long, 5)) {
 			SDL_Log("FileError: %s\n", StandardHighscoresFile.GetError().c_str());
 		}
 		if(!StandardHighscoresFile.CloseFile()) {
@@ -287,11 +310,33 @@ int main(int argc, char* arg[]) {
 		unsigned long LastTime;
 		LastTime = SDL_GetTicks();
 
+		Image LastClearImage;
+
 		unsigned long Level=1, MoveDownTimer=0, TotalLines=0, TotalScore=0, LastMove=10;
 		std::string LineTypes[8] = {"Single","Double","Triple","Tetris!","SUPER\nTETRIS!","T-Spin\nSingle","T-Spin\nDouble!","T-SPIN\nTRIPLE!"};
-		std::string LastLineClear=" ";
+		LastClearImage.LoadFromText(" ", BigFont, Render, {255, 255, 255, 255});
 
 		unsigned long ScoreList[] = {Single, Double, Triple, Tetris, STetris};
+
+		Image HighScoreTitle, HighscoresText[5];
+		HighscoresText[0].LoadFromText("1:", SmallFont, Render, {255, 255, 255, 255});
+		HighscoresText[1].LoadFromText("2:", SmallFont, Render, {255, 255, 255, 255});
+		HighscoresText[2].LoadFromText("3:", SmallFont, Render, {255, 255, 255, 255});
+		HighscoresText[3].LoadFromText("4:", SmallFont, Render, {255, 255, 255, 255});
+		HighscoresText[4].LoadFromText("5:", SmallFont, Render, {255, 255, 255, 255});
+		HighScoreTitle.LoadFromText("Highscores:", SmallFont, Render, {255, 255, 255, 255});
+		
+		Image Numbers[10];
+		Numbers[0].LoadFromText("0", SmallFont, Render, {255, 255, 255, 255});
+		Numbers[1].LoadFromText("1", SmallFont, Render, {255, 255, 255, 255});
+		Numbers[2].LoadFromText("2", SmallFont, Render, {255, 255, 255, 255});
+		Numbers[3].LoadFromText("3", SmallFont, Render, {255, 255, 255, 255});
+		Numbers[4].LoadFromText("4", SmallFont, Render, {255, 255, 255, 255});
+		Numbers[5].LoadFromText("5", SmallFont, Render, {255, 255, 255, 255});
+		Numbers[6].LoadFromText("6", SmallFont, Render, {255, 255, 255, 255});
+		Numbers[7].LoadFromText("7", SmallFont, Render, {255, 255, 255, 255});
+		Numbers[8].LoadFromText("8", SmallFont, Render, {255, 255, 255, 255});
+		Numbers[9].LoadFromText("9", SmallFont, Render, {255, 255, 255, 255});
 
 		while(!Quit) {
 			while(SDL_PollEvent(&Event_Handler)) {
@@ -355,10 +400,10 @@ int main(int argc, char* arg[]) {
 						//TODO: add t-spin detection
 
 						if(Amount != 0) {
-							LastLineClear = LineTypes[Amount - 1 + IsTSpin*5];
+							LastClearImage.LoadFromText(LineTypes[Amount - 1 + IsTSpin*5], BigFont, Render, {255, 255, 255, 255});
 						}
 						else {
-							LastLineClear = " ";
+							LastClearImage.LoadFromText(" ", BigFont, Render, {255, 255, 255, 255});
 						}
 						if(SettingsTable[2 /* 2 = Pentomino Setting */] == 0 /* 0=false */) {
 							MainTetromino->ResetWithUpcomming(Engine, UpcommingTetromino, 3, CurrentMode);
@@ -425,10 +470,10 @@ int main(int argc, char* arg[]) {
 							//TODO: add t-spin detection
 
 							if(Amount != 0) {
-								LastLineClear = LineTypes[Amount - 1 + IsTSpin*5];
+								LastClearImage.LoadFromText(LineTypes[Amount - 1 + IsTSpin*5], BigFont, Render, {255, 255, 255, 255});
 							}
 							else {
-								LastLineClear = " ";
+								LastClearImage.LoadFromText(" ", BigFont, Render, {255, 255, 255, 255});
 							}
 							if(SettingsTable[2 /* 3 = Pentomino Setting */] == 0 /* 0=false */) {
 								MainTetromino->ResetWithUpcomming(Engine, UpcommingTetromino, 3, CurrentMode);
@@ -475,10 +520,10 @@ int main(int argc, char* arg[]) {
 						//TODO: add t-spin detection
 
 						if(Amount != 0) {
-							LastLineClear = LineTypes[Amount - 1 + IsTSpin*5];
+							LastClearImage.LoadFromText(LineTypes[Amount - 1 + IsTSpin*5], BigFont, Render, {255, 255, 255, 255});
 						}
 						else {
-							LastLineClear = " ";
+							LastClearImage.LoadFromText(" ", BigFont, Render, {255, 255, 255, 255});
 						}
 						if(SettingsTable[2 /* 2 = Pentomino Setting */] == 0 /* 0=false */) {
 							MainTetromino->ResetWithUpcomming(Engine, UpcommingTetromino, 3, CurrentMode);
@@ -566,8 +611,20 @@ int main(int argc, char* arg[]) {
 				}
 			}
 			else if(CurrentState == States::Dead && PressedKeys[SDL_SCANCODE_RETURN]) {
+				HighscoresTable[5] = TotalScore;
+				std::sort(HighscoresTable, HighscoresTable+6, [](long a, long b){return a>b;});
+
+				switch(CurrentMode) {
+					case Modes::Standard:
+						File StandardHighscoresFile;
+						StandardHighscoresFile.OpenFile("Data/StandardHighscores.bin", FileModes::Write | FileModes::Binary, HighscoresTable, 5, long);
+						StandardHighscoresFile.Write(HighscoresTable, long, 5);
+						StandardHighscoresFile.CloseFile();
+						break;
+				}
+
 				CurrentState = States::Menu;
-				LastLineClear = " ";
+				LastClearImage.LoadFromText(" ", BigFont, Render, {255, 255, 255, 255});
 				TotalLines = 0;
 				TotalScore = 0;
 				HoldTetromino->ResetShape(Engine, -1, CurrentMode);
@@ -585,8 +642,6 @@ int main(int argc, char* arg[]) {
 
 			SurroundingLine.Draw(GAME_X-10, SCREEN_HEIGHT - 28*25 - 10, Render);
 
-			Image LastClearImage;
-			LastClearImage.LoadFromText(LastLineClear, BigFont, Render, {255, 255, 255, 255});
 			LastClearImage.Draw(Text_X, 20, Render);
 
 			std::string TotalLinesString, ScoreString;
@@ -594,19 +649,35 @@ int main(int argc, char* arg[]) {
 
 			TotalLinesStringStream << TotalLines;
 			TotalLinesString = TotalLinesStringStream.str();
-			TotalLinesText[1].LoadFromText(TotalLinesString, SmallFont, Render, {255, 255, 255, 255});
+			int w,h;
+			TTF_SizeUTF8(SmallFont, TotalLinesString.c_str(), &w, &h);
+			WriteNumber(Render, TotalLines, Numbers, GAME_X - w - 10, 20+(21*5), SmallFont);
 
 			ScoreStringStream << TotalScore;
 			ScoreString = ScoreStringStream.str();
-			Score[1].LoadFromText(ScoreString, SmallFont, Render, {255, 255, 255, 255});
+			TTF_SizeUTF8(SmallFont, ScoreString.c_str(), &w, &h);
+			WriteNumber(Render, TotalScore, Numbers, GAME_X - (w) - 10, 20+(21*6), SmallFont);
+
 
 
 			//Heaight of text = 21
 
 			TotalLinesText[0].Draw(Text_X, 20+(21*5), Render);
-			TotalLinesText[1].Draw(GAME_X - (TotalLinesText[1].GetSize().w) - 10, 20+(21*5), Render);
 			Score[0].Draw(Text_X, 20+(21*6), Render);
-			Score[1].Draw(GAME_X - (Score[1].GetSize().w) - 10, 20+(21*6), Render);
+
+
+			HighScoreTitle.Draw(Text_X+3, SCREEN_HEIGHT - (6*HighScoreTitle.GetSize().h), Render);
+			for(int i=0; i<5; i++) {
+				std::stringstream Temp1, Temp2;
+				Temp2 << HighscoresTable[i];
+
+				int w, h;
+				TTF_SizeUTF8(SmallFont, Temp2.str().c_str(), &w, &h);
+
+				WriteNumber(Render, HighscoresTable[i], Numbers, GAME_X - w, SCREEN_HEIGHT - ((5-i)*h), SmallFont);
+				HighscoresText[i].Draw(Text_X+3, SCREEN_HEIGHT - ((5-i)*h), Render);
+			}
+
 
 			if(CurrentState == States::Game) {
 
