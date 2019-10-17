@@ -1,5 +1,5 @@
 #OBJS specifies which files to compile as part of the project
-OBJS = Source_Files/Main.cpp Source_Files/World/World.cpp Source_Files/Mino/Mino.cpp SDL-Helper-Libraries/Image/Image.cpp SDL-Helper-Libraries/KeyHandlers/KeyHandlers.cpp SDL-Helper-Libraries/File/File.cpp
+OBJS = Source_Files/Main.cpp Source_Files/World/World.cpp Source_Files/Mino/Mino.cpp SDL-Helper-Libraries/Image/Image.cpp SDL-Helper-Libraries/File/File.cpp
 
 #CC specifies which compiler we're using
 CC = g++

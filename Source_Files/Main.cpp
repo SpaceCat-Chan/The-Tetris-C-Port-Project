@@ -114,8 +114,6 @@ namespace Buttons {
 
 #include "World/World.hpp"
 
-#include "../SDL-Helper-Libraries/KeyHandlers/KeyHandlers.hpp"
-
 #include "../SDL-Helper-Libraries/File/File.hpp"
 
 
@@ -301,12 +299,6 @@ int main(int argc, char* arg[]) {
 			SDL_Log("FileError: %s\n", SettingsFile.GetError().c_str());
 		}
 
-		KeyHandler KeyHandlerList[AmountOfControls + 2];
-
-		KeyHandlerList[Buttons::MovLeft].SetValues(SettingsTable[1], SettingsTable[0], true);
-		KeyHandlerList[Buttons::MovRight].SetValues(SettingsTable[1], SettingsTable[0], true);
-		KeyHandlerList[Buttons::SoftDR].SetValues(SettingsTable[1], SettingsTable[0], true);
-
 		unsigned long LastTime;
 		LastTime = SDL_GetTicks();
 
@@ -338,47 +330,163 @@ int main(int argc, char* arg[]) {
 		Numbers[8].LoadFromText("8", SmallFont, Render, {255, 255, 255, 255});
 		Numbers[9].LoadFromText("9", SmallFont, Render, {255, 255, 255, 255});
 
+		bool PressedKeys[AmountOfControls + 2];
+		int PressedFor[AmountOfControls + 2];
+		for(int i=0; i<AmountOfControls+2; i++) {
+			PressedKeys[i] = false;
+			PressedFor[i] = 0;
+		}
+
 		while(!Quit) {
-			while(SDL_PollEvent(&Event_Handler)) {
-				if(Event_Handler.type == SDL_QUIT) {
-					Quit = true;
-				}
-			}
-
-
-			//button handeling
-			const unsigned char* PressedKeys;
-			PressedKeys = SDL_GetKeyboardState(NULL);
-			
-			PressedKeys[ControlsTable[Buttons::MovLeft]] ? KeyHandlerList[Buttons::MovLeft].Press() : KeyHandlerList[Buttons::MovLeft].UnPress();
-			PressedKeys[ControlsTable[Buttons::MovRight]] ? KeyHandlerList[Buttons::MovRight].Press() : KeyHandlerList[Buttons::MovRight].UnPress();
-			PressedKeys[ControlsTable[Buttons::SoftDR]] ? KeyHandlerList[Buttons::SoftDR].Press() : KeyHandlerList[Buttons::SoftDR].UnPress();
-			PressedKeys[ControlsTable[Buttons::HardDR]] ? KeyHandlerList[Buttons::HardDR].Press() : KeyHandlerList[Buttons::HardDR].UnPress();
-			PressedKeys[ControlsTable[Buttons::HoldSpot]] ? KeyHandlerList[Buttons::HoldSpot].Press() : KeyHandlerList[Buttons::HoldSpot].UnPress();
-			PressedKeys[ControlsTable[Buttons::RotLeft]] ? KeyHandlerList[Buttons::RotLeft].Press() : KeyHandlerList[Buttons::RotLeft].UnPress();
-			PressedKeys[ControlsTable[Buttons::RotRight]] ? KeyHandlerList[Buttons::RotRight].Press() : KeyHandlerList[Buttons::RotRight].UnPress();
-			PressedKeys[ControlsTable[Buttons::Swap]] ? KeyHandlerList[Buttons::Swap].Press() : KeyHandlerList[Buttons::Swap].UnPress();
-			PressedKeys[SDL_SCANCODE_RETURN] ? KeyHandlerList[Buttons::Return].Press() : KeyHandlerList[Buttons::Return].UnPress();
-			PressedKeys[SDL_SCANCODE_ESCAPE] ? KeyHandlerList[Buttons::Escape].Press() : KeyHandlerList[Buttons::Escape].UnPress();
 
 			unsigned long Time, Temp;
 			Temp = SDL_GetTicks();
 			Time = Temp - LastTime;
 			LastTime = Temp;
 
-			Uint8 KeyStates[AmountOfControls + 2];
+			Uint8 KeyStates[AmountOfControls + 2], AlreadyLetGo[AmountOfControls + 2];
+			for(int i=0; i<AmountOfControls+2; i++) {
+				KeyStates[i] = false;
+				AlreadyLetGo[i] = false;
+			}
 
-			KeyStates[Buttons::MovLeft] = KeyHandlerList[Buttons::MovLeft].Tick(Time);
-			KeyStates[Buttons::MovRight] = KeyHandlerList[Buttons::MovRight].Tick(Time);
-			KeyStates[Buttons::SoftDR] = KeyHandlerList[Buttons::SoftDR].Tick(Time);
-			KeyStates[Buttons::HardDR] = KeyHandlerList[Buttons::HardDR].Tick(Time);
-			KeyStates[Buttons::HoldSpot] = KeyHandlerList[Buttons::HoldSpot].Tick(Time);
-			KeyStates[Buttons::RotLeft] = KeyHandlerList[Buttons::RotLeft].Tick(Time);
-			KeyStates[Buttons::RotRight] = KeyHandlerList[Buttons::RotRight].Tick(Time);
-			KeyStates[Buttons::Swap] = KeyHandlerList[Buttons::Swap].Tick(Time);
-			KeyStates[Buttons::Return] = KeyHandlerList[Buttons::Return].Tick(Time);
-			KeyStates[Buttons::Escape] = KeyHandlerList[Buttons::Escape].Tick(Time);
+			while(SDL_PollEvent(&Event_Handler)) {
+				if(Event_Handler.type == SDL_QUIT) {
+					Quit = true;
+				}
 
+				if(Event_Handler.type == SDL_KEYDOWN && !Event_Handler.key.repeat) {
+					if(Event_Handler.key.keysym.scancode == ControlsTable[Buttons::MovLeft]) {
+						if(!AlreadyLetGo[Buttons::MovLeft]) {
+							PressedKeys[Buttons::MovLeft] = true;
+							PressedFor[Buttons::MovLeft] = 0;
+						}
+						KeyStates[Buttons::MovLeft] = true;
+					}
+					else if(Event_Handler.key.keysym.scancode == ControlsTable[Buttons::MovRight]) {
+						if(!AlreadyLetGo[Buttons::MovRight]) {
+							PressedKeys[Buttons::MovRight] = true;
+							PressedFor[Buttons::MovRight] = 0;
+						}
+						KeyStates[Buttons::MovRight] = true;
+					}
+					else if(Event_Handler.key.keysym.scancode == ControlsTable[Buttons::SoftDR]) {
+						if(!AlreadyLetGo[Buttons::SoftDR]) {
+							PressedKeys[Buttons::SoftDR] = true;
+							PressedFor[Buttons::SoftDR] = 0;
+						}
+						KeyStates[Buttons::SoftDR] = true;
+					}
+					else if(Event_Handler.key.keysym.scancode == ControlsTable[Buttons::HardDR]) {
+						if(!AlreadyLetGo[Buttons::HardDR]) {
+							PressedKeys[Buttons::HardDR] = true;
+							PressedFor[Buttons::HardDR] = 0;
+						}
+						KeyStates[Buttons::HardDR] = true;
+					}
+					else if(Event_Handler.key.keysym.scancode == ControlsTable[Buttons::HoldSpot]) {
+						if(!AlreadyLetGo[Buttons::HoldSpot]) {
+							PressedKeys[Buttons::HoldSpot] = true;
+							PressedFor[Buttons::HoldSpot] = 0;
+						}
+						KeyStates[Buttons::HoldSpot] = true;
+					}
+					else if(Event_Handler.key.keysym.scancode == ControlsTable[Buttons::RotLeft]) {
+						if(!AlreadyLetGo[Buttons::RotLeft]) {
+							PressedKeys[Buttons::RotLeft] = true;
+							PressedFor[Buttons::RotLeft] = 0;
+						}
+						KeyStates[Buttons::RotLeft] = true;
+					}
+					else if(Event_Handler.key.keysym.scancode == ControlsTable[Buttons::RotRight]) {
+						if(!AlreadyLetGo[Buttons::RotRight]) {
+							PressedKeys[Buttons::RotRight] = true;
+							PressedFor[Buttons::RotRight] = 0;
+						}
+						KeyStates[Buttons::RotRight] = true;
+					}
+					else if(Event_Handler.key.keysym.scancode == ControlsTable[Buttons::Swap]) {
+						if(!AlreadyLetGo[Buttons::Swap]) {
+							PressedKeys[Buttons::Swap] = true;
+							PressedFor[Buttons::Swap] = 0;
+						}
+						KeyStates[Buttons::Swap] = true;
+					}
+					else if(Event_Handler.key.keysym.scancode == SDL_SCANCODE_RETURN) {
+						if(!AlreadyLetGo[Buttons::Return]) {
+							PressedKeys[Buttons::Return] = true;
+							PressedFor[Buttons::Return] = 0;
+						}
+						KeyStates[Buttons::Return] = true;
+					}
+					else if(Event_Handler.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
+						if(!AlreadyLetGo[Buttons::Escape]) {
+							PressedKeys[Buttons::Escape] = true;
+							PressedFor[Buttons::Escape] = 0;
+						}
+						KeyStates[Buttons::Escape] = true;
+					}
+				}
+				if(Event_Handler.type == SDL_KEYUP) {
+					if(Event_Handler.key.keysym.scancode == ControlsTable[Buttons::MovLeft]) {
+						PressedKeys[Buttons::MovLeft] = false;
+						AlreadyLetGo[Buttons::MovLeft] = true;
+					}
+					else if(Event_Handler.key.keysym.scancode == ControlsTable[Buttons::MovRight]) {
+						PressedKeys[Buttons::MovRight] = false;
+						AlreadyLetGo[Buttons::MovRight] = true;
+					}
+					else if(Event_Handler.key.keysym.scancode == ControlsTable[Buttons::SoftDR]) {
+						PressedKeys[Buttons::SoftDR] = false;
+						AlreadyLetGo[Buttons::SoftDR] = true;
+					}
+					else if(Event_Handler.key.keysym.scancode == ControlsTable[Buttons::HardDR]) {
+						PressedKeys[Buttons::HardDR] = false;
+						AlreadyLetGo[Buttons::HardDR] = true;
+					}
+					else if(Event_Handler.key.keysym.scancode == ControlsTable[Buttons::HoldSpot]) {
+						PressedKeys[Buttons::HoldSpot] = false;
+						AlreadyLetGo[Buttons::HoldSpot] = true;
+					}
+					else if(Event_Handler.key.keysym.scancode == ControlsTable[Buttons::RotLeft]) {
+						PressedKeys[Buttons::RotLeft] = false;
+						AlreadyLetGo[Buttons::RotLeft] = true;
+					}
+					else if(Event_Handler.key.keysym.scancode == ControlsTable[Buttons::RotRight]) {
+						PressedKeys[Buttons::RotRight] = false;
+						AlreadyLetGo[Buttons::RotRight] = true;
+					}
+					else if(Event_Handler.key.keysym.scancode == ControlsTable[Buttons::Swap]) {
+						PressedKeys[Buttons::Swap] = false;
+						AlreadyLetGo[Buttons::Swap] = true;
+					}
+					else if(Event_Handler.key.keysym.scancode == SDL_SCANCODE_RETURN) {
+						PressedKeys[Buttons::Return] = false;
+						AlreadyLetGo[Buttons::Return] = true;
+					}
+					else if(Event_Handler.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
+						PressedKeys[Buttons::Escape] = false;
+						AlreadyLetGo[Buttons::Escape] = true;
+					}
+				}
+
+			}
+
+			for(int i=0; i<AmountOfControls+2; i++) {
+				if(PressedKeys[i]) {
+					PressedFor[i] += Time;
+				}
+			}
+
+			for(int i=0; i < AmountOfControls + 2; i++) {
+				if(PressedFor[i] > SettingsTable[0]+SettingsTable[1]) {
+					if(i == Buttons::SoftDR || i == Buttons::MovLeft || i == Buttons::MovRight) {
+						KeyStates[i] = true;
+						PressedFor[i] = SettingsTable[0];
+					}
+				}
+			}
+			
 			//Logic handeling (timers, moving things, menues, all that stuff)
 
 			Level = TotalLines/10;
@@ -610,7 +718,7 @@ int main(int argc, char* arg[]) {
 					CurrentState = States::Game;
 				}
 			}
-			else if(CurrentState == States::Dead && PressedKeys[SDL_SCANCODE_RETURN]) {
+			else if(CurrentState == States::Dead && KeyStates[SDL_SCANCODE_RETURN]) {
 				HighscoresTable[5] = TotalScore;
 				std::sort(HighscoresTable, HighscoresTable+6, [](long a, long b){return a>b;});
 
@@ -709,7 +817,7 @@ int main(int argc, char* arg[]) {
 			}
 
 			SDL_RenderPresent(Render);
-			SDL_Delay(50);
+			SDL_Delay(0);
 		}
 		close(Window, Render);
 	}
