@@ -12,7 +12,6 @@ Add Puyo Mode
 Add Finishing Touches
 
 Ideas:
-Basic Names for Scores
 Online Scoreboard(?)
 Stickman Mode
 */
@@ -730,7 +729,6 @@ int main(int argc, char* arg[]) {
 				MainWorld.Draw(Render, GAME_X, 0);
 				MainTetromino->Draw(Render, GAME_X, 0);
 				Ghost.Draw(Render, GAME_X, 0);
-				DeadLine.Draw(GAME_X, 156, Render);
 
 				HoldSpotBackground.Draw(Render, Text_X, 300);
 				Outline.Draw(Text_X - 5, 300 - 14 - 5, Render);
@@ -752,6 +750,8 @@ int main(int argc, char* arg[]) {
 				MainWorld.Draw(Render, GAME_X, 0);
 				DeathText.Draw(GAME_X + 140 - DeathText.GetSize().w/2, 100, Render);
 			}
+
+			DeadLine.Draw(GAME_X, 156, Render);
 
 			SDL_RenderPresent(Render);
 			SDL_Delay(0);
