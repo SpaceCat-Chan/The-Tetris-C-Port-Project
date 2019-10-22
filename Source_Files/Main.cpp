@@ -2,8 +2,6 @@
 TODO:
 Add Basic UI
 Add Pause Screen
-Add Score Counting functionality
-Add Levels
 Add Level Selection
 Add Controls and Settings
 Add Mode Selection
