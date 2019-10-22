@@ -676,7 +676,7 @@ int main(int argc, char* arg[]) {
 
 			SurroundingLine.Draw(GAME_X-10, SCREEN_HEIGHT - 28*25 - 10, Render);
 
-			LastClearImage.Draw(Text_X, 20, Render);
+			LastClearImage.Draw(GAME_X + 28*11, 20, Render);
 
 			std::string TotalLinesString, ScoreString;
 			std::stringstream TotalLinesStringStream, ScoreStringStream;
@@ -685,29 +685,29 @@ int main(int argc, char* arg[]) {
 			TotalLinesString = TotalLinesStringStream.str();
 			int w,h;
 			TTF_SizeUTF8(SmallFont, TotalLinesString.c_str(), &w, &h);
-			WriteNumber(Render, TotalLines, Numbers, GAME_X - w - 10, 20+(21*5), SmallFont);
+			WriteNumber(Render, TotalLines, Numbers, GAME_X - w - 10, 20, SmallFont);
 
 			ScoreStringStream << TotalScore;
 			ScoreString = ScoreStringStream.str();
 			TTF_SizeUTF8(SmallFont, ScoreString.c_str(), &w, &h);
-			WriteNumber(Render, TotalScore, Numbers, GAME_X - (w) - 10, 20+(21*6), SmallFont);
+			WriteNumber(Render, TotalScore, Numbers, GAME_X - (w) - 10, 41, SmallFont);
 
 
 
 			//Heaight of text = 21
 
-			TotalLinesText[0].Draw(Text_X, 20+(21*5), Render);
-			Score[0].Draw(Text_X, 20+(21*6), Render);
+			TotalLinesText[0].Draw(Text_X, 20, Render);
+			Score[0].Draw(Text_X, 41, Render);
 			
 			
-			LevelText.Draw(Text_X, 20+(21*7), Render);
+			LevelText.Draw(Text_X, 20+(21*2), Render);
 			std::string LevelString;
 			std::stringstream LevelStringStream;
 
 			LevelStringStream << Level;
 			LevelString = LevelStringStream.str();
 			TTF_SizeUTF8(SmallFont, LevelString.c_str(), &w, &h);
-			WriteNumber(Render, Level, Numbers, GAME_X - (w) - 10, 20+(21*7), SmallFont);
+			WriteNumber(Render, Level, Numbers, GAME_X - (w) - 10, 20+(21*2), SmallFont);
 
 
 			HighScoreTitle.Draw(Text_X+3, SCREEN_HEIGHT - (6*HighScoreTitle.GetSize().h), Render);
