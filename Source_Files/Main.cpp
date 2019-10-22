@@ -142,6 +142,59 @@ bool init(SDL_Window** window, SDL_Renderer** Render);
 
 void close(SDL_Window* window, SDL_Renderer* Render);
 
+
+bool ClearLines(SDL_Renderer *Render, Tetromino *MainTetromino, World *MainWorld, unsigned long &TotalLines, unsigned long &TotalScore, const long Level, unsigned long *ScoreList, long *SettingsTable, Image* LastClearImage, std::string *LineTypes, TTF_Font *BigFont, std::unique_ptr<Image[]> *TetrominoImages, Image &Blank, int &CurrentMode, std::mt19937 &Engine, Tetromino &UpcommingTetromino, bool &HoldState) {
+	if(MainTetromino->MoveDown(MainWorld)) {
+		std::unique_ptr<int[]> Check;
+		int Amount;
+		Amount = MainWorld->CheckLines(Check);
+		for(int i=(Amount-1); (i >= 0) && (Amount > 0); i--) {
+			MainWorld->ClearLine((Check)[i]);
+		}
+
+		//TODO: add t-spin detection
+
+		bool IsTSpin=false;
+		TotalLines += (Amount);
+		if(Amount > 0) {
+			TotalScore += ScoreList[Amount-1] * (Level+1) * (IsTSpin ? Spin_Multiplier : 1);
+		}
+
+		if(Amount != 0) {
+			LastClearImage->LoadFromText(LineTypes[Amount - 1 + IsTSpin*5], BigFont, Render, {255, 255, 255, 255});
+		}
+		else {
+			LastClearImage->LoadFromText(" ", BigFont, Render, {255, 255, 255, 255});
+		}
+		if(SettingsTable[2 /* 2 = Pentomino Setting */] == 0 /* 0=false */) {
+			MainTetromino->ResetWithUpcomming(Engine, UpcommingTetromino, 3, CurrentMode);
+			MainTetromino->SetLocation(5, 22);
+			MainTetromino->SetImages(TetrominoImages);
+		}
+		else if(SettingsTable[2] == 1 /* 1=Sometimes */) {
+			std::uniform_int_distribution<int> SizeSelect(3,5);
+			std::mt19937 Engine;
+			int SelectedLength = (floor((SizeSelect(Engine) - 3) / 2) + 3);
+			MainTetromino->ResetWithUpcomming(Engine, UpcommingTetromino, SelectedLength, CurrentMode);
+			MainTetromino->SetLocation(5, 22);
+			MainTetromino->SetImages(TetrominoImages);
+		}
+		else if(SettingsTable[2] == 2 /* 2=true */) {
+			MainTetromino->ResetWithUpcomming(Engine, UpcommingTetromino, 4, CurrentMode);
+			MainTetromino->SetLocation(5, 22);
+			MainTetromino->SetImages(TetrominoImages);
+		}
+		MainWorld->SetImages(TetrominoImages, &Blank);
+		UpcommingTetromino.SetImages(TetrominoImages);
+		UpcommingTetromino.SetLocation(2,2);
+		HoldState = false;
+
+		return true;
+	}
+	return false;
+}
+
+
 int main(int argc, char* arg[]) {
 	SDL_Window* Window=nullptr;
 	SDL_Renderer* Render=nullptr;
@@ -493,50 +546,9 @@ int main(int argc, char* arg[]) {
 
 			if(CurrentState == States::Game) {
 				if(MoveDownTimer > ((85.52 * pow(0.88, Level)) * 10)) {
-					if(MainTetromino->MoveDown(&MainWorld)) {
-						std::unique_ptr<int[]> Check;
-						int Amount;
-						Amount = MainWorld.CheckLines(Check);
-						for(int i=(Amount-1); (i >= 0) && (Amount > 0); i--) {
-							MainWorld.ClearLine((Check)[i]);
-						}
-						bool IsTSpin=false;
-						TotalLines += (Amount);
-						if(Amount > 0) {
-							TotalScore += (ScoreList[Amount-1] * (Level+1) * (IsTSpin ? Spin_Multiplier : 1));
-						}
-						//TODO: add t-spin detection
-
-						if(Amount != 0) {
-							LastClearImage.LoadFromText(LineTypes[Amount - 1 + IsTSpin*5], BigFont, Render, {255, 255, 255, 255});
-						}
-						else {
-							LastClearImage.LoadFromText(" ", BigFont, Render, {255, 255, 255, 255});
-						}
-						if(SettingsTable[2 /* 2 = Pentomino Setting */] == 0 /* 0=false */) {
-							MainTetromino->ResetWithUpcomming(Engine, UpcommingTetromino, 3, CurrentMode);
-							MainTetromino->SetLocation(5, 22);
-							MainTetromino->SetImages(&TetrominoImages);
-						}
-						else if(SettingsTable[2] == 1 /* 1=Sometimes */) {
-							std::uniform_int_distribution<int> SizeSelect(3,5);
-							std::mt19937 Engine;
-							int SelectedLength = (floor((SizeSelect(Engine) - 3) / 2) + 3);
-							MainTetromino->ResetWithUpcomming(Engine, UpcommingTetromino, SelectedLength, CurrentMode);
-							MainTetromino->SetLocation(5, 22);
-							MainTetromino->SetImages(&TetrominoImages);
-						}
-						else if(SettingsTable[2] == 2 /* 2=true */) {
-							MainTetromino->ResetWithUpcomming(Engine, UpcommingTetromino, 4, CurrentMode);
-							MainTetromino->SetLocation(5, 22);
-							MainTetromino->SetImages(&TetrominoImages);
-						}
-						MainWorld.SetImages(&TetrominoImages, &Blank);
-						HoldState = false;
+					if(ClearLines(Render, MainTetromino, &MainWorld, TotalLines, TotalScore, Level, ScoreList, SettingsTable, &LastClearImage, LineTypes, BigFont, &TetrominoImages, Blank, CurrentMode, Engine, UpcommingTetromino, HoldState))
 						Ghost = MainTetromino->MakeGhost(MainWorld, &GhostImages);
-						UpcommingTetromino.SetImages(&TetrominoImages);
-						UpcommingTetromino.SetLocation(2,2);
-					}
+	
 					MoveDownTimer = Time;
 				}
 				else {
@@ -561,48 +573,7 @@ int main(int argc, char* arg[]) {
 				if(KeyStates[Buttons::HardDR]) {
 					bool Down;
 					do {
-						Down = MainTetromino->MoveDown(&MainWorld);
-						if(Down) {
-							std::unique_ptr<int[]> Check;
-							int Amount;
-							Amount = MainWorld.CheckLines(Check);
-							for(int i=(Amount-1); (i >= 0) && (Amount > 0); i--) {
-								MainWorld.ClearLine((Check)[i]);
-							}
-							bool IsTSpin=false;
-							TotalLines += (Amount);
-							if(Amount > 0) {
-								TotalScore += ScoreList[Amount-1] * (Level+1) * (IsTSpin ? Spin_Multiplier : 1);
-							}
-
-							//TODO: add t-spin detection
-
-							if(Amount != 0) {
-								LastClearImage.LoadFromText(LineTypes[Amount - 1 + IsTSpin*5], BigFont, Render, {255, 255, 255, 255});
-							}
-							else {
-								LastClearImage.LoadFromText(" ", BigFont, Render, {255, 255, 255, 255});
-							}
-							if(SettingsTable[2 /* 3 = Pentomino Setting */] == 0 /* 0=false */) {
-								MainTetromino->ResetWithUpcomming(Engine, UpcommingTetromino, 3, CurrentMode);
-								MainTetromino->SetLocation(5, 22);
-								MainTetromino->SetImages(&TetrominoImages);
-							}
-							else if(SettingsTable[2] == 1 /* 1=Sometimes */) {
-								std::uniform_int_distribution<int> SizeSelect(3,5);
-								std::mt19937 Engine;
-								int SelectedLength = (floor((SizeSelect(Engine) - 3) / 2) + 3);
-								MainTetromino->ResetWithUpcomming(Engine, UpcommingTetromino, SelectedLength, CurrentMode);
-								MainTetromino->SetLocation(5, 22);
-								MainTetromino->SetImages(&TetrominoImages);
-							}
-							else if(SettingsTable[2] == 2 /* 2=true */) {
-								MainTetromino->ResetWithUpcomming(Engine, UpcommingTetromino, 4, CurrentMode);
-								MainTetromino->SetLocation(5, 22);
-								MainTetromino->SetImages(&TetrominoImages);
-							}
-							MainWorld.SetImages(&TetrominoImages, &Blank);
-						}
+						Down = ClearLines(Render, MainTetromino, &MainWorld, TotalLines, TotalScore, Level, ScoreList, SettingsTable, &LastClearImage, LineTypes, BigFont, &TetrominoImages, Blank, CurrentMode, Engine, UpcommingTetromino, HoldState);
 					}
 					while(!Down);
 					HoldState = false;
@@ -612,50 +583,8 @@ int main(int argc, char* arg[]) {
 					UpcommingTetromino.SetLocation(2,2);
 				}
 				if(KeyStates[Buttons::SoftDR]) {
-					if(MainTetromino->MoveDown(&MainWorld)) {
-						std::unique_ptr<int[]> Check;
-						int Amount;
-						Amount = MainWorld.CheckLines(Check);
-						for(int i=(Amount-1); (i >= 0) && (Amount > 0); i--) {
-							MainWorld.ClearLine((Check)[i]);
-						}
-						bool IsTSpin=false;
-						TotalLines += (Amount);
-						if(Amount > 0) {
-							TotalScore += ScoreList[Amount-1] * (Level+1) * (IsTSpin ? Spin_Multiplier : 1);
-						}
+					ClearLines(Render, MainTetromino, &MainWorld, TotalLines, TotalScore, Level, ScoreList, SettingsTable, &LastClearImage, LineTypes, BigFont, &TetrominoImages, Blank, CurrentMode, Engine, UpcommingTetromino, HoldState);
 
-						//TODO: add t-spin detection
-
-						if(Amount != 0) {
-							LastClearImage.LoadFromText(LineTypes[Amount - 1 + IsTSpin*5], BigFont, Render, {255, 255, 255, 255});
-						}
-						else {
-							LastClearImage.LoadFromText(" ", BigFont, Render, {255, 255, 255, 255});
-						}
-						if(SettingsTable[2 /* 2 = Pentomino Setting */] == 0 /* 0=false */) {
-							MainTetromino->ResetWithUpcomming(Engine, UpcommingTetromino, 3, CurrentMode);
-							MainTetromino->SetLocation(5, 22);
-							MainTetromino->SetImages(&TetrominoImages);
-						}
-						else if(SettingsTable[2] == 1 /* 1=Sometimes */) {
-							std::uniform_int_distribution<int> SizeSelect(3,5);
-							std::mt19937 Engine;
-							int SelectedLength = (floor((SizeSelect(Engine) - 3) / 2) + 3);
-							MainTetromino->ResetWithUpcomming(Engine, UpcommingTetromino, SelectedLength, CurrentMode);
-							MainTetromino->SetLocation(5, 22);
-							MainTetromino->SetImages(&TetrominoImages);
-						}
-						else if(SettingsTable[2] == 2 /* 2=true */) {
-							MainTetromino->ResetWithUpcomming(Engine, UpcommingTetromino, 4, CurrentMode);
-							MainTetromino->SetLocation(5, 22);
-							MainTetromino->SetImages(&TetrominoImages);
-						}
-						MainWorld.SetImages(&TetrominoImages, &Blank);
-						UpcommingTetromino.SetImages(&TetrominoImages);
-						UpcommingTetromino.SetLocation(2,2);
-						HoldState = false;
-					}
 					MoveDownTimer = Time;
 					Ghost = MainTetromino->MakeGhost(MainWorld, &GhostImages);
 				}
@@ -718,7 +647,7 @@ int main(int argc, char* arg[]) {
 					CurrentState = States::Game;
 				}
 			}
-			else if(CurrentState == States::Dead && KeyStates[SDL_SCANCODE_RETURN]) {
+			else if(CurrentState == States::Dead && KeyStates[Buttons::Return]) {
 				HighscoresTable[5] = TotalScore;
 				std::sort(HighscoresTable, HighscoresTable+6, [](long a, long b){return a>b;});
 
@@ -780,7 +709,7 @@ int main(int argc, char* arg[]) {
 
 			LevelStringStream << Level;
 			LevelString = LevelStringStream.str();
-			TTF_SizeUTF8(SmallFont, ScoreString.c_str(), &w, &h);
+			TTF_SizeUTF8(SmallFont, LevelString.c_str(), &w, &h);
 			WriteNumber(Render, Level, Numbers, GAME_X - (w) - 10, 20+(21*7), SmallFont);
 
 
