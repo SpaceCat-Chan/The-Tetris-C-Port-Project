@@ -157,37 +157,38 @@ bool ClearLines(SDL_Renderer *Render, Tetromino *MainTetromino, World *MainWorld
 		TotalLines += (Amount);
 		if(Amount > 0) {
 			TotalScore += ScoreList[Amount-1] * (Level+1) * (IsTSpin ? Spin_Multiplier : 1);
-		}
-
-		if(Amount != 0) {
 			LastClearImage->LoadFromText(LineTypes[Amount - 1 + IsTSpin*5], BigFont, Render, {255, 255, 255, 255});
 		}
 		else {
 			LastClearImage->LoadFromText(" ", BigFont, Render, {255, 255, 255, 255});
 		}
-		if(SettingsTable[2 /* 2 = Pentomino Setting */] == 0 /* 0=false */) {
-			MainTetromino->ResetWithUpcomming(Engine, UpcommingTetromino, 3, CurrentMode);
-			MainTetromino->SetLocation(5, 22);
-			MainTetromino->SetImages(TetrominoImages);
+
+		switch(SettingsTable[2 /*pentomino settings*/]) {
+			case 0: //never
+				MainTetromino->ResetWithUpcomming(Engine, UpcommingTetromino, 3, CurrentMode);
+				MainTetromino->SetLocation(5, 22);
+				MainTetromino->SetImages(TetrominoImages);
+				break;
+			
+			case 1: //sometimes
+				std::uniform_int_distribution<int> SizeSelect(3,5);
+				int SelectedLength = (floor((SizeSelect(Engine) - 3) / 2) + 3);
+				MainTetromino->ResetWithUpcomming(Engine, UpcommingTetromino, SelectedLength, CurrentMode);
+				MainTetromino->SetLocation(5, 22);
+				MainTetromino->SetImages(TetrominoImages);
+				break;
+
+			case 2: //always
+				MainTetromino->ResetWithUpcomming(Engine, UpcommingTetromino, 4, CurrentMode);
+				MainTetromino->SetLocation(5, 22);
+				MainTetromino->SetImages(TetrominoImages);
+				break;
 		}
-		else if(SettingsTable[2] == 1 /* 1=Sometimes */) {
-			std::uniform_int_distribution<int> SizeSelect(3,5);
-			std::mt19937 Engine;
-			int SelectedLength = (floor((SizeSelect(Engine) - 3) / 2) + 3);
-			MainTetromino->ResetWithUpcomming(Engine, UpcommingTetromino, SelectedLength, CurrentMode);
-			MainTetromino->SetLocation(5, 22);
-			MainTetromino->SetImages(TetrominoImages);
-		}
-		else if(SettingsTable[2] == 2 /* 2=true */) {
-			MainTetromino->ResetWithUpcomming(Engine, UpcommingTetromino, 4, CurrentMode);
-			MainTetromino->SetLocation(5, 22);
-			MainTetromino->SetImages(TetrominoImages);
-		}
+
 		MainWorld->SetImages(TetrominoImages, &Blank);
 		UpcommingTetromino.SetImages(TetrominoImages);
 		UpcommingTetromino.SetLocation(2,2);
 		HoldState = false;
-
 		return true;
 	}
 	return false;
