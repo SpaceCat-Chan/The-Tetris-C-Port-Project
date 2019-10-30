@@ -1,13 +1,15 @@
 /*
 TODO:
 Add Basic UI
+	Add Level Selection
+
 Add Pause Screen
-Add Level Selection
 Add Controls and Settings
+
 Add Mode Selection
-Add Basic Modes (Hidden)
-Add Swap Mode
-Add Puyo Mode
+	Add Basic Modes (Hidden)
+	Add Swap Mode
+	Add Puyo Mode
 
 Add Finishing Touches
 
