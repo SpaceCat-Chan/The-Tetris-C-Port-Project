@@ -30,31 +30,30 @@ Stickman Mode
 #include <sstream>
 #include <algorithm>
 
-#define SCREEN_WIDTH 800
-#define SCREEN_HEIGHT 720
-#define yeet return 1
+constexpr unsigned int ScreenWidth=800;
+constexpr unsigned int ScreenHeight=720;
 
-#define GAME_X 230
-#define Text_X 20
-
-/*in lua version there was a thing called ProtSettings
-moving into definitions now*/
-#define Single 1
-#define Double 3
-#define Triple 10
-#define Tetris 32
-#define STetris 70
-#define Spin_Multiplier 4
+constexpr unsigned int PlayAreaX=230;
+constexpr unsigned int TextX=20;
 
 
-#define Puyo_Types 5
-#define ChainLength 7
-#define Max_Types_In_One_Piece 2
-#define Time_Beetween_action 200
+constexpr int Single=1;
+constexpr int Double=3;
+constexpr int Triple=10;
+constexpr int Tetris=32;
+constexpr int STetris=70;
+constexpr int SpinMultiplier=4;
+
+
+constexpr int Puyo_Types=5;
+constexpr int ChainLength=7;
+constexpr int MaxTypesInOnePiece=2;
+
+constexpr int TimeBeetweenAction=200;
 //ProtSettings Finished
 
-#define AmountOfControls 8
-#define AmountOfSettings 3
+constexpr unsigned int AmountOfControls=8;
+constexpr unsigned int AmountOfSettings=3;
 
 enum TetrominoList {
 	S,
@@ -115,8 +114,16 @@ namespace Buttons {
 
 #include "../SDL-Helper-Libraries/File/File.hpp"
 
+struct BasicGameData {
+	SDL_Renderer *Render=nullptr;
+	SDL_Window *Window=nullptr;
+	std::vector<TTF_Font*> Fonts;
+	unsigned long CurrentScore=0, CurrentLevel=0, AmountLinesCleared=0;
+	bool Quit=false;
+	std::mt19937 RandEngine;
+};
 
-void WriteNumber(SDL_Renderer *Render, long Number, Image *Numbers, int x, int y, TTF_Font *font) {
+void DrawNumber(SDL_Renderer *Render, long Number, Image *Numbers, int x, int y, TTF_Font *font) {
 	std::stringstream ToString;
 	ToString << Number;
 	unsigned long Distance=0;
@@ -137,12 +144,7 @@ void WriteNumber(SDL_Renderer *Render, long Number, Image *Numbers, int x, int y
 }
 
 
-bool init(SDL_Window** window, SDL_Renderer** Render);
-
-void close(SDL_Window* window, SDL_Renderer* Render);
-
-
-bool ClearLines(SDL_Renderer *Render, Tetromino *MainTetromino, World *MainWorld, unsigned long &TotalLines, unsigned long &TotalScore, const long Level, unsigned long *ScoreList, long *SettingsTable, Image* LastClearImage, std::string *LineTypes, TTF_Font *BigFont, std::unique_ptr<Image[]> *TetrominoImages, Image &Blank, int &CurrentMode, std::mt19937 &Engine, Tetromino &UpcommingTetromino, bool &HoldState) {
+bool ClearLines(BasicGameData &GameData, Tetromino *MainTetromino, World *MainWorld, unsigned long *ScoreList, long *SettingsTable, Image* LastClearImage, std::string *LineTypes, std::unique_ptr<Image[]> &TetrominoImages, Image &Blank, int &CurrentMode, Tetromino &UpcommingTetromino, bool &HoldState) {
 	if(MainTetromino->MoveDown(MainWorld)) {
 		std::unique_ptr<int[]> Check;
 		int Amount;
@@ -154,39 +156,39 @@ bool ClearLines(SDL_Renderer *Render, Tetromino *MainTetromino, World *MainWorld
 		//TODO: add t-spin detection
 
 		bool IsTSpin=false;
-		TotalLines += (Amount);
+		GameData.AmountLinesCleared += (Amount);
 		if(Amount > 0) {
-			TotalScore += ScoreList[Amount-1] * (Level+1) * (IsTSpin ? Spin_Multiplier : 1);
-			LastClearImage->LoadFromText(LineTypes[Amount - 1 + IsTSpin*5], BigFont, Render, {255, 255, 255, 255});
+			GameData.CurrentScore += ScoreList[Amount-1] * (GameData.CurrentLevel+1) * (IsTSpin ? SpinMultiplier : 1);
+			LastClearImage->LoadFromText(LineTypes[Amount - 1 + IsTSpin*5], GameData.Fonts[1], GameData.Render, {255, 255, 255, 255});
 		}
 		else {
-			LastClearImage->LoadFromText(" ", BigFont, Render, {255, 255, 255, 255});
+			LastClearImage->LoadFromText(" ", GameData.Fonts[1], GameData.Render, {255, 255, 255, 255});
 		}
 
 		switch(SettingsTable[2 /*pentomino settings*/]) {
-			case 0: //never
-				MainTetromino->ResetWithUpcomming(Engine, UpcommingTetromino, 3, CurrentMode);
+			case 0: { //never
+				MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, 3, CurrentMode);
 				MainTetromino->SetLocation(5, 22);
-				MainTetromino->SetImages(TetrominoImages);
-				break;
+				MainTetromino->SetImages(&TetrominoImages);
+				break;}
 			
-			case 1: //sometimes
+			case 1: { //sometimes
 				std::uniform_int_distribution<int> SizeSelect(3,5);
-				int SelectedLength = (floor((SizeSelect(Engine) - 3) / 2) + 3);
-				MainTetromino->ResetWithUpcomming(Engine, UpcommingTetromino, SelectedLength, CurrentMode);
+				int SelectedLength = (floor((SizeSelect(GameData.RandEngine) - 3) / 2) + 3);
+				MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, SelectedLength, CurrentMode);
 				MainTetromino->SetLocation(5, 22);
-				MainTetromino->SetImages(TetrominoImages);
-				break;
+				MainTetromino->SetImages(&TetrominoImages);
+				break;}
 
-			case 2: //always
-				MainTetromino->ResetWithUpcomming(Engine, UpcommingTetromino, 4, CurrentMode);
+			case 2: { //always
+				MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, 4, CurrentMode);
 				MainTetromino->SetLocation(5, 22);
-				MainTetromino->SetImages(TetrominoImages);
-				break;
+				MainTetromino->SetImages(&TetrominoImages);
+				break;}
 		}
 
-		MainWorld->SetImages(TetrominoImages, &Blank);
-		UpcommingTetromino.SetImages(TetrominoImages);
+		MainWorld->SetImages(&TetrominoImages, &Blank);
+		UpcommingTetromino.SetImages(&TetrominoImages);
 		UpcommingTetromino.SetLocation(2,2);
 		HoldState = false;
 		return true;
@@ -195,52 +197,54 @@ bool ClearLines(SDL_Renderer *Render, Tetromino *MainTetromino, World *MainWorld
 }
 
 
-int main(int argc, char* arg[]) {
-	SDL_Window* Window=nullptr;
-	SDL_Renderer* Render=nullptr;
+bool init(BasicGameData &GameData);
 
-	if(init(&Window, &Render)) {
-		bool Quit=false;
+void close(BasicGameData &GameData);
+
+int main(int argc, char* argv[]) {
+	BasicGameData GameData;
+
+	if(init(GameData)) {
 
 		SDL_Event Event_Handler;
 
 		std::unique_ptr<Image[]> TetrominoImages;
 		TetrominoImages = std::make_unique<Image[]>(TetrominoList::TOTAL_AMOUNT);
 
-		std::cout << "Loading Main Images\n";
+		SDL_Log("Loading Main Images\n");
 
-		TetrominoImages[TetrominoList::S].LoadImage("Minos/SPiece.png", Render);
-		TetrominoImages[TetrominoList::Z].LoadImage("Minos/ZPiece.png", Render);
-		TetrominoImages[TetrominoList::L].LoadImage("Minos/LPiece.png", Render);
-		TetrominoImages[TetrominoList::J].LoadImage("Minos/JPiece.png", Render);
-		TetrominoImages[TetrominoList::I].LoadImage("Minos/IPiece.png", Render);
-		TetrominoImages[TetrominoList::T].LoadImage("Minos/TPiece.png", Render);
-		TetrominoImages[TetrominoList::O].LoadImage("Minos/OPiece.png", Render);
+		TetrominoImages[TetrominoList::S].LoadImage("Minos/SPiece.png", GameData.Render);
+		TetrominoImages[TetrominoList::Z].LoadImage("Minos/ZPiece.png", GameData.Render);
+		TetrominoImages[TetrominoList::L].LoadImage("Minos/LPiece.png", GameData.Render);
+		TetrominoImages[TetrominoList::J].LoadImage("Minos/JPiece.png", GameData.Render);
+		TetrominoImages[TetrominoList::I].LoadImage("Minos/IPiece.png", GameData.Render);
+		TetrominoImages[TetrominoList::T].LoadImage("Minos/TPiece.png", GameData.Render);
+		TetrominoImages[TetrominoList::O].LoadImage("Minos/OPiece.png", GameData.Render);
 
 		std::unique_ptr<Image[]> GhostImages;
 		GhostImages = std::make_unique<Image[]>(TetrominoList::TOTAL_AMOUNT);
 
-		std::cout << "Loading Ghost Images\n";
+		SDL_Log("Loading Ghost Images\n");
 
-		GhostImages[TetrominoList::S].LoadImage("Minos/SPieceGhost.png", Render);
-		GhostImages[TetrominoList::Z].LoadImage("Minos/ZPieceGhost.png", Render);
-		GhostImages[TetrominoList::L].LoadImage("Minos/LPieceGhost.png", Render);
-		GhostImages[TetrominoList::J].LoadImage("Minos/JPieceGhost.png", Render);
-		GhostImages[TetrominoList::I].LoadImage("Minos/IPieceGhost.png", Render);
-		GhostImages[TetrominoList::T].LoadImage("Minos/TPieceGhost.png", Render);
-		GhostImages[TetrominoList::O].LoadImage("Minos/OPieceGhost.png", Render);
+		GhostImages[TetrominoList::S].LoadImage("Minos/SPieceGhost.png", GameData.Render);
+		GhostImages[TetrominoList::Z].LoadImage("Minos/ZPieceGhost.png", GameData.Render);
+		GhostImages[TetrominoList::L].LoadImage("Minos/LPieceGhost.png", GameData.Render);
+		GhostImages[TetrominoList::J].LoadImage("Minos/JPieceGhost.png", GameData.Render);
+		GhostImages[TetrominoList::I].LoadImage("Minos/IPieceGhost.png", GameData.Render);
+		GhostImages[TetrominoList::T].LoadImage("Minos/TPieceGhost.png", GameData.Render);
+		GhostImages[TetrominoList::O].LoadImage("Minos/OPieceGhost.png", GameData.Render);
 
-		std::cout << "Loading other images\n";
+		SDL_Log("Loading other images\n");
 
 		Image Blank;
-		Blank.LoadImage("Minos/Blank.png", Render);
+		Blank.LoadImage("Minos/Blank.png", GameData.Render);
 
 		Image Background, Title, SurroundingLine, DeadLine, Outline;
-		Background.LoadImage("BackGround.png", Render);
-		Title.LoadImage("Title.png", Render);
-		SurroundingLine.LoadImage("Surrounding_Line.png", Render);
-		DeadLine.LoadImage("Deadline.png", Render);
-		Outline.LoadImage("5_5_Outline.png", Render);
+		Background.LoadImage("BackGround.png", GameData.Render);
+		Title.LoadImage("Title.png", GameData.Render);
+		SurroundingLine.LoadImage("Surrounding_Line.png", GameData.Render);
+		DeadLine.LoadImage("Deadline.png", GameData.Render);
+		Outline.LoadImage("5_5_Outline.png", GameData.Render);
 
 		World UpcommingBackground{5,5}, HoldSpotBackground{5,5};
 		UpcommingBackground.SetImages(&TetrominoImages, &Blank);
@@ -248,27 +252,25 @@ int main(int argc, char* arg[]) {
 
 		Background.SetColor(128, 128, 128);
 
-		std::cout << "finished loading images\n";
+		SDL_Log("finished loading images\n");
 
-		TTF_Font *SmallFont, *BigFont;
+		GameData.Fonts.push_back(TTF_OpenFont("DejaVuSans.ttf", 18));
+		GameData.Fonts.push_back(TTF_OpenFont("DejaVuSans.ttf", 36));
 
-		SmallFont = TTF_OpenFont("DejaVuSans.ttf", 18); //deja vu, i have been in this bad time before.
-		BigFont = TTF_OpenFont("DejaVuSans.ttf", 36);
-
-		if(!SmallFont || !BigFont) {
-			std::cout << "unable to load Fonts, TTF_ERROR: " << TTF_GetError() << '\n';
+		if(!GameData.Fonts[0] || !GameData.Fonts[1]) {
+			SDL_Log("unable to load Fonts, TTF_ERROR: %s\n", TTF_GetError());
 		}
 
 		Image DeathText;
-		DeathText.LoadFromText("You Died", BigFont, Render, {255,255,255});
+		DeathText.LoadFromText("You Died", GameData.Fonts[1], GameData.Render, {255,255,255});
 
 		Image TotalLinesText[2], Score[2], LevelText;
-		TotalLinesText[0].LoadFromText("TotalLines: ", SmallFont, Render, {255, 255, 255, 255});
-		Score[0].LoadFromText("Score: ", SmallFont, Render, {255, 255, 255, 255});
-		LevelText.LoadFromText("Level: ", SmallFont, Render, {255, 255, 255});
+		TotalLinesText[0].LoadFromText("TotalLines: ", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+		Score[0].LoadFromText("Score: ", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+		LevelText.LoadFromText("Level: ", GameData.Fonts[0], GameData.Render, {255, 255, 255});
 
 
-		std::cout << "Finished loading Fonts and Static Text\n";
+		SDL_Log("Finished loading Fonts and Static Text\n");
 
 		World MainWorld, EmptyWorld;
 		Tetromino MainSet, HoldSet, Ghost, UpcommingTetromino;
@@ -280,10 +282,9 @@ int main(int argc, char* arg[]) {
 		MainWorld.SetImages(&TetrominoImages, &Blank);
 		EmptyWorld.SetImages(&TetrominoImages, &Blank);
 
-		std::mt19937 Engine;
-		Engine.seed(time(nullptr));
+		GameData.RandEngine.seed(time(nullptr));
 
-		MainTetromino->ResetShape(Engine);
+		MainTetromino->ResetShape(GameData.RandEngine);
 		MainTetromino->SetLocation(5, 22);
 		MainTetromino->SetImages(&TetrominoImages);
 		UpcommingTetromino.SetImages(&TetrominoImages);
@@ -294,15 +295,6 @@ int main(int argc, char* arg[]) {
 
 		int CurrentMode = Modes::Standard;
 		int CurrentState = States::Menu;
-
-		int RotateLeft = SDLK_z;
-		int RotateRight = SDLK_c;
-		int HardDrop = SDLK_x;
-		int Hold = SDLK_UP;
-		int MoveLeft = SDLK_LEFT;
-		int MoveRight = SDLK_RIGHT;
-		int SoftDrop = SDLK_DOWN;
-
 
 		long StandardHighscoresTableStandard[5] = {0,0,0,0,0};
 		long HighscoresTable[6] = {0, 0, 0, 0, 0, 0};
@@ -357,31 +349,31 @@ int main(int argc, char* arg[]) {
 
 		Image LastClearImage;
 
-		unsigned long Level=1, MoveDownTimer=0, TotalLines=0, TotalScore=0, LastMove=10;
+		unsigned long MoveDownTimer=0;
 		std::string LineTypes[8] = {"Single","Double","Triple","Tetris!","SUPER\nTETRIS!","T-Spin\nSingle","T-Spin\nDouble!","T-SPIN\nTRIPLE!"};
-		LastClearImage.LoadFromText(" ", BigFont, Render, {255, 255, 255, 255});
+		LastClearImage.LoadFromText(" ", GameData.Fonts[1], GameData.Render, {255, 255, 255, 255});
 
 		unsigned long ScoreList[] = {Single, Double, Triple, Tetris, STetris};
 
 		Image HighScoreTitle, HighscoresText[5];
-		HighscoresText[0].LoadFromText("1:", SmallFont, Render, {255, 255, 255, 255});
-		HighscoresText[1].LoadFromText("2:", SmallFont, Render, {255, 255, 255, 255});
-		HighscoresText[2].LoadFromText("3:", SmallFont, Render, {255, 255, 255, 255});
-		HighscoresText[3].LoadFromText("4:", SmallFont, Render, {255, 255, 255, 255});
-		HighscoresText[4].LoadFromText("5:", SmallFont, Render, {255, 255, 255, 255});
-		HighScoreTitle.LoadFromText("Highscores:", SmallFont, Render, {255, 255, 255, 255});
+		HighscoresText[0].LoadFromText("1:", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+		HighscoresText[1].LoadFromText("2:", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+		HighscoresText[2].LoadFromText("3:", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+		HighscoresText[3].LoadFromText("4:", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+		HighscoresText[4].LoadFromText("5:", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+		HighScoreTitle.LoadFromText("Highscores:", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
 		
 		Image Numbers[10];
-		Numbers[0].LoadFromText("0", SmallFont, Render, {255, 255, 255, 255});
-		Numbers[1].LoadFromText("1", SmallFont, Render, {255, 255, 255, 255});
-		Numbers[2].LoadFromText("2", SmallFont, Render, {255, 255, 255, 255});
-		Numbers[3].LoadFromText("3", SmallFont, Render, {255, 255, 255, 255});
-		Numbers[4].LoadFromText("4", SmallFont, Render, {255, 255, 255, 255});
-		Numbers[5].LoadFromText("5", SmallFont, Render, {255, 255, 255, 255});
-		Numbers[6].LoadFromText("6", SmallFont, Render, {255, 255, 255, 255});
-		Numbers[7].LoadFromText("7", SmallFont, Render, {255, 255, 255, 255});
-		Numbers[8].LoadFromText("8", SmallFont, Render, {255, 255, 255, 255});
-		Numbers[9].LoadFromText("9", SmallFont, Render, {255, 255, 255, 255});
+		Numbers[0].LoadFromText("0", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+		Numbers[1].LoadFromText("1", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+		Numbers[2].LoadFromText("2", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+		Numbers[3].LoadFromText("3", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+		Numbers[4].LoadFromText("4", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+		Numbers[5].LoadFromText("5", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+		Numbers[6].LoadFromText("6", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+		Numbers[7].LoadFromText("7", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+		Numbers[8].LoadFromText("8", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+		Numbers[9].LoadFromText("9", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
 
 		bool PressedKeys[AmountOfControls + 2];
 		int PressedFor[AmountOfControls + 2];
@@ -390,7 +382,7 @@ int main(int argc, char* arg[]) {
 			PressedFor[i] = 0;
 		}
 
-		while(!Quit) {
+		while(!GameData.Quit) {
 
 			unsigned long Time, Temp;
 			Temp = SDL_GetTicks();
@@ -405,7 +397,7 @@ int main(int argc, char* arg[]) {
 
 			while(SDL_PollEvent(&Event_Handler)) {
 				if(Event_Handler.type == SDL_QUIT) {
-					Quit = true;
+					GameData.Quit = true;
 				}
 
 				if(Event_Handler.type == SDL_KEYDOWN && !Event_Handler.key.repeat) {
@@ -542,11 +534,11 @@ int main(int argc, char* arg[]) {
 			
 			//Logic handeling (timers, moving things, menues, all that stuff)
 
-			Level = TotalLines/10;
+			GameData.CurrentLevel = GameData.AmountLinesCleared/10;
 
 			if(CurrentState == States::Game) {
-				if(MoveDownTimer > ((85.52 * pow(0.88, Level)) * 10)) {
-					if(ClearLines(Render, MainTetromino, &MainWorld, TotalLines, TotalScore, Level, ScoreList, SettingsTable, &LastClearImage, LineTypes, BigFont, &TetrominoImages, Blank, CurrentMode, Engine, UpcommingTetromino, HoldState))
+				if(MoveDownTimer > ((85.52 * pow(0.88, GameData.CurrentLevel)) * 10)) {
+					if(ClearLines(GameData, MainTetromino, &MainWorld, ScoreList, SettingsTable, &LastClearImage, LineTypes, TetrominoImages, Blank, CurrentMode, UpcommingTetromino, HoldState))
 						Ghost = MainTetromino->MakeGhost(MainWorld, &GhostImages);
 	
 					MoveDownTimer = Time;
@@ -573,7 +565,7 @@ int main(int argc, char* arg[]) {
 				if(KeyStates[Buttons::HardDR]) {
 					bool Down;
 					do {
-						Down = ClearLines(Render, MainTetromino, &MainWorld, TotalLines, TotalScore, Level, ScoreList, SettingsTable, &LastClearImage, LineTypes, BigFont, &TetrominoImages, Blank, CurrentMode, Engine, UpcommingTetromino, HoldState);
+						Down = ClearLines(GameData, MainTetromino, &MainWorld, ScoreList, SettingsTable, &LastClearImage, LineTypes, TetrominoImages, Blank, CurrentMode, UpcommingTetromino, HoldState);
 					}
 					while(!Down);
 					HoldState = false;
@@ -583,7 +575,7 @@ int main(int argc, char* arg[]) {
 					UpcommingTetromino.SetLocation(2,2);
 				}
 				if(KeyStates[Buttons::SoftDR]) {
-					ClearLines(Render, MainTetromino, &MainWorld, TotalLines, TotalScore, Level, ScoreList, SettingsTable, &LastClearImage, LineTypes, BigFont, &TetrominoImages, Blank, CurrentMode, Engine, UpcommingTetromino, HoldState);
+					ClearLines(GameData, MainTetromino, &MainWorld, ScoreList, SettingsTable, &LastClearImage, LineTypes, TetrominoImages, Blank, CurrentMode, UpcommingTetromino, HoldState);
 
 					MoveDownTimer = Time;
 					Ghost = MainTetromino->MakeGhost(MainWorld, &GhostImages);
@@ -593,18 +585,17 @@ int main(int argc, char* arg[]) {
 						std::swap(HoldTetromino, MainTetromino);
 						if(MainTetromino->GetRotation() == -1) {
 							if(SettingsTable[2 /* 2 = Pentomino Setting */] == 0 /* 0=false */) {
-							MainTetromino->ResetWithUpcomming(Engine, UpcommingTetromino, 3, CurrentMode);
+							MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, 3, CurrentMode);
 							MainTetromino->SetImages(&TetrominoImages);
 						}
 						else if(SettingsTable[2] == 1 /* 1=Sometimes */) {
 							std::uniform_int_distribution<int> SizeSelect(3,5);
-							std::mt19937 Engine;
-							int SelectedLength = (floor((SizeSelect(Engine) - 3) / 2) + 3);
-							MainTetromino->ResetWithUpcomming(Engine, UpcommingTetromino, SelectedLength, CurrentMode);
+							int SelectedLength = (floor((SizeSelect(GameData.RandEngine) - 3) / 2) + 3);
+							MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, SelectedLength, CurrentMode);
 							MainTetromino->SetImages(&TetrominoImages);
 						}
 						else if(SettingsTable[2] == 2 /* 2=true */) {
-							MainTetromino->ResetWithUpcomming(Engine, UpcommingTetromino, 4, CurrentMode);
+							MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, 4, CurrentMode);
 							MainTetromino->SetImages(&TetrominoImages);
 						}
 						}
@@ -621,23 +612,22 @@ int main(int argc, char* arg[]) {
 				if(KeyStates[Buttons::Return]) {
 					MainWorld.Reset();
 					MainWorld.SetImages(&TetrominoImages, &Blank);
-					TotalLines = 0;
-					TotalScore = 0;
+					GameData.AmountLinesCleared = 0;
+					GameData.CurrentScore = 0;
 					if(SettingsTable[2 /* 3 = Pentomino Setting */] == 0 /* 0=false */) {
-						MainTetromino->ResetWithUpcomming(Engine, UpcommingTetromino, 3, CurrentMode);
+						MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, 3, CurrentMode);
 						MainTetromino->SetLocation(5, 22);
 						MainTetromino->SetImages(&TetrominoImages);
 					}
 					else if(SettingsTable[2] == 1 /* 1=Sometimes */) {
 						std::uniform_int_distribution<int> SizeSelect(3,5);
-						std::mt19937 Engine;
-						int SelectedLength = (floor((SizeSelect(Engine) - 3) / 2) + 3);
-						MainTetromino->ResetWithUpcomming(Engine, UpcommingTetromino, SelectedLength, CurrentMode);
+						int SelectedLength = (floor((SizeSelect(GameData.RandEngine) - 3) / 2) + 3);
+						MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, SelectedLength, CurrentMode);
 						MainTetromino->SetLocation(5, 22);
 						MainTetromino->SetImages(&TetrominoImages);
 					}
 					else if(SettingsTable[2] == 2 /* 2=true */) {
-						MainTetromino->ResetWithUpcomming(Engine,UpcommingTetromino, 4, CurrentMode);
+						MainTetromino->ResetWithUpcomming(GameData.RandEngine,UpcommingTetromino, 4, CurrentMode);
 						MainTetromino->SetLocation(5, 22);
 						MainTetromino->SetImages(&TetrominoImages);
 					}
@@ -648,7 +638,7 @@ int main(int argc, char* arg[]) {
 				}
 			}
 			else if(CurrentState == States::Dead && KeyStates[Buttons::Return]) {
-				HighscoresTable[5] = TotalScore;
+				HighscoresTable[5] = GameData.CurrentScore;
 				std::sort(HighscoresTable, HighscoresTable+6, [](long a, long b){return a>b;});
 
 				switch(CurrentMode) {
@@ -661,10 +651,10 @@ int main(int argc, char* arg[]) {
 				}
 
 				CurrentState = States::Menu;
-				LastClearImage.LoadFromText(" ", BigFont, Render, {255, 255, 255, 255});
-				TotalLines = 0;
-				TotalScore = 0;
-				HoldTetromino->ResetShape(Engine, -1, CurrentMode);
+				LastClearImage.LoadFromText(" ", GameData.Fonts[1], GameData.Render, {255, 255, 255, 255});
+				GameData.AmountLinesCleared = 0;
+				GameData.CurrentScore = 0;
+				HoldTetromino->ResetShape(GameData.RandEngine, -1, CurrentMode);
 			}
 			
 			if(MainWorld.LinesAbove(20) > 0 && CurrentState == States::Game) {
@@ -673,134 +663,133 @@ int main(int argc, char* arg[]) {
 
 			//Drawing Logic
 
-			SDL_RenderClear(Render);
+			SDL_RenderClear(GameData.Render);
 
-			Background.Draw(0, 0, Render);
+			Background.Draw(0, 0, GameData.Render);
 
-			SurroundingLine.Draw(GAME_X-10, SCREEN_HEIGHT - 28*25 - 10, Render);
+			SurroundingLine.Draw(PlayAreaX-10, ScreenHeight - 28*25 - 10, GameData.Render);
 
-			LastClearImage.Draw(GAME_X + 28*11, 20, Render);
+			LastClearImage.Draw(PlayAreaX + 28*11, 20, GameData.Render);
 
 			std::string TotalLinesString, ScoreString;
 			std::stringstream TotalLinesStringStream, ScoreStringStream;
 
-			TotalLinesStringStream << TotalLines;
+			TotalLinesStringStream << GameData.AmountLinesCleared;
 			TotalLinesString = TotalLinesStringStream.str();
 			int w,h;
-			TTF_SizeUTF8(SmallFont, TotalLinesString.c_str(), &w, &h);
-			WriteNumber(Render, TotalLines, Numbers, GAME_X - w - 10, 20, SmallFont);
+			TTF_SizeUTF8(GameData.Fonts[0], TotalLinesString.c_str(), &w, &h);
+			DrawNumber(GameData.Render, GameData.AmountLinesCleared, Numbers, PlayAreaX - w - 10, 20, GameData.Fonts[0]);
 
-			ScoreStringStream << TotalScore;
+			ScoreStringStream << GameData.CurrentScore;
 			ScoreString = ScoreStringStream.str();
-			TTF_SizeUTF8(SmallFont, ScoreString.c_str(), &w, &h);
-			WriteNumber(Render, TotalScore, Numbers, GAME_X - (w) - 10, 41, SmallFont);
+			TTF_SizeUTF8(GameData.Fonts[0], ScoreString.c_str(), &w, &h);
+			DrawNumber(GameData.Render, GameData.CurrentScore, Numbers, PlayAreaX - (w) - 10, 41, GameData.Fonts[0]);
 
 
 
 			//Heaight of text = 21
 
-			TotalLinesText[0].Draw(Text_X, 20, Render);
-			Score[0].Draw(Text_X, 41, Render);
+			TotalLinesText[0].Draw(TextX, 20, GameData.Render);
+			Score[0].Draw(TextX, 41, GameData.Render);
 			
 			
-			LevelText.Draw(Text_X, 20+(21*2), Render);
+			LevelText.Draw(TextX, 20+(21*2), GameData.Render);
 			std::string LevelString;
 			std::stringstream LevelStringStream;
 
-			LevelStringStream << Level;
+			LevelStringStream << GameData.CurrentLevel;
 			LevelString = LevelStringStream.str();
-			TTF_SizeUTF8(SmallFont, LevelString.c_str(), &w, &h);
-			WriteNumber(Render, Level, Numbers, GAME_X - (w) - 10, 20+(21*2), SmallFont);
+			TTF_SizeUTF8(GameData.Fonts[0], LevelString.c_str(), &w, &h);
+			DrawNumber(GameData.Render, GameData.CurrentLevel, Numbers, PlayAreaX - (w) - 10, 20+(21*2), GameData.Fonts[0]);
 
 
-			HighScoreTitle.Draw(Text_X+3, SCREEN_HEIGHT - (6*HighScoreTitle.GetSize().h), Render);
+			HighScoreTitle.Draw(TextX+3, ScreenHeight - (6*HighScoreTitle.GetSize().h), GameData.Render);
 			for(int i=0; i<5; i++) {
 				std::stringstream Temp1, Temp2;
 				Temp2 << HighscoresTable[i];
 
 				int w, h;
-				TTF_SizeUTF8(SmallFont, Temp2.str().c_str(), &w, &h);
+				TTF_SizeUTF8(GameData.Fonts[0], Temp2.str().c_str(), &w, &h);
 
-				WriteNumber(Render, HighscoresTable[i], Numbers, GAME_X - w - 10, SCREEN_HEIGHT - ((5-i)*h), SmallFont);
-				HighscoresText[i].Draw(Text_X+3, SCREEN_HEIGHT - ((5-i)*h), Render);
+				DrawNumber(GameData.Render, HighscoresTable[i], Numbers, PlayAreaX - w - 10, ScreenHeight - ((5-i)*h), GameData.Fonts[0]);
+				HighscoresText[i].Draw(TextX+3, ScreenHeight - ((5-i)*h), GameData.Render);
 			}
-
 
 			if(CurrentState == States::Game) {
 
 
-				MainWorld.Draw(Render, GAME_X, 0);
-				MainTetromino->Draw(Render, GAME_X, 0);
-				Ghost.Draw(Render, GAME_X, 0);
+				MainWorld.Draw(GameData.Render, PlayAreaX, 0);
+				MainTetromino->Draw(GameData.Render, PlayAreaX, 0);
+				Ghost.Draw(GameData.Render, PlayAreaX, 0);
 
-				HoldSpotBackground.Draw(Render, Text_X, 300);
-				Outline.Draw(Text_X - 5, 300 - 14 - 5, Render);
+				HoldSpotBackground.Draw(GameData.Render, TextX, 300);
+				Outline.Draw(TextX - 5, 300 - 14 - 5, GameData.Render);
 				if(HoldTetromino->GetRotation() != -1) {
-					HoldTetromino->Draw(Render, Text_X, 300);
+					HoldTetromino->Draw(GameData.Render, TextX, 300);
 				}
 
-				UpcommingBackground.Draw(Render, Text_X, (720 - 460) - 5 * 28);
+				UpcommingBackground.Draw(GameData.Render, TextX, (720 - 460) - 5 * 28);
 				//the way Worlds and Tetrominos are drawn is very different from the way images are
 				//specificaly the 0,0 point is in the bottom left corner for Worlds and Tetrominos instead of the top left
 				//AND the corner of the World/Tetromino that is actually at the specified cordinate also follows the above rule
-				Outline.Draw(Text_X - 3, 460 - 3, Render);
-				UpcommingTetromino.Draw(Render, Text_X, (720 - 460) - 5 * 28);
+				Outline.Draw(TextX - 3, 460 - 3, GameData.Render);
+				UpcommingTetromino.Draw(GameData.Render, TextX, (720 - 460) - 5 * 28);
 			}
 			else if(CurrentState == States::Menu) {
-				EmptyWorld.Draw(Render, GAME_X, 0);
+				EmptyWorld.Draw(GameData.Render, PlayAreaX, 0);
 			}
 			else if(CurrentState == States::Dead) {
-				MainWorld.Draw(Render, GAME_X, 0);
-				DeathText.Draw(GAME_X + 140 - DeathText.GetSize().w/2, 100, Render);
+				MainWorld.Draw(GameData.Render, PlayAreaX, 0);
+				DeathText.Draw(PlayAreaX + 140 - DeathText.GetSize().w/2, 100, GameData.Render);
 			}
 
-			DeadLine.Draw(GAME_X, 156, Render);
+			DeadLine.Draw(PlayAreaX, 156, GameData.Render);
 
-			SDL_RenderPresent(Render);
+			SDL_RenderPresent(GameData.Render);
 			SDL_Delay(0);
 		}
-		close(Window, Render);
+		close(GameData);
 	}
-
-	yeet;
 }
 
-bool init(SDL_Window** window, SDL_Renderer** Render) {
+bool init(BasicGameData &GameData) {
 	if(SDL_Init(SDL_INIT_VIDEO) < 0) {
-		std::cout << "SDL could not initialize! SDL_Error: " << SDL_GetError() << '\n';
+		SDL_Log("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
 		return false;
 	}
-	else {
-		*window = SDL_CreateWindow("Fook u", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
-		if(*window == NULL) {
-			std::cout << "Window could not be created, SDL_Error: " << SDL_GetError() << '\n';
-			return false;
-		}
-		else {
-			int Img_Flags = IMG_INIT_PNG;
-			if(!(IMG_Init(Img_Flags) & Img_Flags)) {
-				std::cout << "Unable to load PNG loader, IMG_ERROR: " << IMG_GetError() << '\n';
-				return false;
-			}
-			else {
-				if(TTF_Init() == -1) {
-					std::cout << "Unable To Load Fontloader, TTF_ERROR: " << TTF_GetError() << '\n';
-					return false;
-				}
-				*Render = SDL_CreateRenderer(*window, -1, SDL_RENDERER_ACCELERATED);
-				if(*Render == NULL) {
-					std::cout << "unable to create Renderer, SDL_ERROR" << SDL_GetError() << '\n';
-					return false;
-				}
-				return true;
-			}
-		}
+	
+	GameData.Window = SDL_CreateWindow("Fook u", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, ScreenWidth, ScreenHeight, SDL_WINDOW_SHOWN);
+	if(GameData.Window == nullptr) {
+		SDL_Log("Window could not be created, SDL_Error: %s\n", SDL_GetError());
+		return false;
 	}
+
+		int Img_Flags = IMG_INIT_PNG;
+	if(!(IMG_Init(Img_Flags) & Img_Flags)) {
+		SDL_Log("Unable to load PNG loader, IMG_ERROR: %s\n", IMG_GetError());
+		return false;
+	}
+
+	if(TTF_Init() == -1) {
+		SDL_Log("Unable To Load Fontloader, TTF_ERROR: %s\n", TTF_GetError());
+		return false;
+	}
+
+	GameData.Render = SDL_CreateRenderer(GameData.Window, -1, SDL_RENDERER_ACCELERATED);
+	if(GameData.Render == nullptr) {
+		std::cout << "unable to create Renderer, SDL_ERROR" << SDL_GetError() << '\n';
+		return false;
+	}
+	return true;
 }
 
-void close(SDL_Window* window, SDL_Renderer* Render) {
-	SDL_DestroyWindow( window );
-	SDL_DestroyRenderer(Render);
+void close(BasicGameData &GameData) {
+	SDL_DestroyWindow(GameData.Window);
+	SDL_DestroyRenderer(GameData.Render);
+
+	for(auto& Font : GameData.Fonts) {
+		TTF_CloseFont(Font);
+	}
 
 	TTF_Quit();
 
@@ -808,5 +797,5 @@ void close(SDL_Window* window, SDL_Renderer* Render) {
 
 	SDL_Quit();
 
-	std::cout << "exited succesfully\n";
+	SDL_Log("exited succesfully\n");
 }
