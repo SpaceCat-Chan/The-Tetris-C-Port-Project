@@ -1,7 +1,7 @@
 #ifndef Mino_HPP
 #define Mino_HPP something
 
-#include <SDL2/SDL.h>
+#include <SDL.h>
 #include <memory>
 #include "../../SDL-Helper-Libraries/Image/Image.hpp"
 

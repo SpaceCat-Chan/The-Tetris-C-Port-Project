@@ -17,12 +17,11 @@ Ideas:
 Online Scoreboard(?)
 Stickman Mode
 */
-
 #include <iostream>
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_filesystem.h>
-#include <SDL2/SDL_image.h>
-#include <SDL2/SDL_ttf.h>
+#include <SDL.h>
+#include <SDL_filesystem.h>
+#include <SDL_image.h>
+#include <SDL_ttf.h>
 #include <random>
 #include <memory>
 #include <math.h>
@@ -798,4 +797,8 @@ void close(BasicGameData &GameData) {
 	SDL_Quit();
 
 	SDL_Log("exited succesfully\n");
+}
+
+int WinMain(int argc, char *argv[]) {
+	main(argc, argv);
 }

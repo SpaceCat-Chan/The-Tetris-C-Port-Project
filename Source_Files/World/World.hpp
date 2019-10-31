@@ -1,7 +1,7 @@
 #ifndef World_HPP
 #define World_HPP Something
 
-#include <SDL2/SDL.h>
+#include <SDL.h>
 #include <memory>
 #include "Mino/Mino.hpp"
 #include <random>
