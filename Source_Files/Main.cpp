@@ -798,7 +798,3 @@ void close(BasicGameData &GameData) {
 
 	SDL_Log("exited succesfully\n");
 }
-
-int WinMain(int argc, char *argv[]) {
-	main(argc, argv);
-}
