@@ -20,7 +20,7 @@ install_data('res/BackGround.png', install_dir : BuildDir + '/Install/')
 install_data('res/5_5_Outline.png', install_dir : BuildDir + '/Install/')
 install_data('res/Surrounding_Line.png', install_dir : BuildDir + '/Install/')
 
-if host_machine.system == 'windows'
+if host_machine.system() == 'windows'
 	install_data('winres/SDL2.dll', install_dir : BuildDir + '/Install/')
 	install_data('winres/zlib1.dll', install_dir : BuildDir + '/Install/')
 	install_data('winres/SDL2_ttf.dll', install_dir : BuildDir + '/Install/')
