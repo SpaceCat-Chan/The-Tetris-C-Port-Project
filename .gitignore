@@ -32,11 +32,5 @@
 *.out
 *.app
 
-Linux_Build/Tetris
-
 #VS code
 .vscode/
-
-#Data Files
-Windows_Build/Data/
-Linux_Build/Data/
