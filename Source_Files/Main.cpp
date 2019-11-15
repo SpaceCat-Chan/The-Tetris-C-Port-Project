@@ -721,18 +721,23 @@ int main(int argc, char* argv[]) {
 				MainTetromino->Draw(GameData.Render, PlayAreaX, 0);
 				Ghost.Draw(GameData.Render, PlayAreaX, 0);
 
-				HoldSpotBackground.Draw(GameData.Render, TextX, 300);
-				Outline.Draw(TextX - 5, 300 - 14 - 5, GameData.Render);
-				if(HoldTetromino->GetRotation() != -1) {
-					HoldTetromino->Draw(GameData.Render, TextX, 300);
-				}
+				constexpr int HoldSpotY=150;
+				constexpr int UpcommingY=300;
 
-				UpcommingBackground.Draw(GameData.Render, TextX, (720 - 460) - 5 * 28);
+				HoldSpotBackground.Draw(GameData.Render, TextX, ScreenHeight - HoldSpotY - 5 * 28);
+				if(HoldTetromino->GetRotation() != -1) {
+					HoldTetromino->Draw(GameData.Render, TextX, ScreenHeight - HoldSpotY - 5 * 28);
+				}
+				Outline.Draw(TextX - 3, HoldSpotY - 5, GameData.Render);
+
+				UpcommingBackground.Draw(GameData.Render, TextX, ScreenHeight - UpcommingY - 5 * 28);
 				//the way Worlds and Tetrominos are drawn is very different from the way images are
 				//specificaly the 0,0 point is in the bottom left corner for Worlds and Tetrominos instead of the top left
 				//AND the corner of the World/Tetromino that is actually at the specified cordinate also follows the above rule
-				Outline.Draw(TextX - 3, 460 - 3, GameData.Render);
-				UpcommingTetromino.Draw(GameData.Render, TextX, (720 - 460) - 5 * 28);
+				
+				//future me here, all i have to say is fuck you past me
+				UpcommingTetromino.Draw(GameData.Render, TextX, (ScreenHeight - UpcommingY) - 5 * 28);
+				Outline.Draw(TextX - 3, UpcommingY - 5, GameData.Render);
 			}
 			else if(CurrentState == States::Menu) {
 				EmptyWorld.Draw(GameData.Render, PlayAreaX, 0);
