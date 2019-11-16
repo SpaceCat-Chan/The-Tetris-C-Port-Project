@@ -1,8 +1,5 @@
 /*
 TODO:
-Add Basic UI
-	Add Level Selection
-
 Add Pause Screen
 Add Controls and Settings
 
@@ -117,7 +114,7 @@ struct BasicGameData {
 	SDL_Renderer *Render=nullptr;
 	SDL_Window *Window=nullptr;
 	std::vector<TTF_Font*> Fonts;
-	unsigned long CurrentScore=0, CurrentLevel=0, AmountLinesCleared=0;
+	unsigned long CurrentScore=0, CurrentLevel=0, SelectedLevel=0, AmountLinesCleared=0;
 	bool Quit=false;
 	std::mt19937 RandEngine;
 };
@@ -263,10 +260,11 @@ int main(int argc, char* argv[]) {
 		Image DeathText;
 		DeathText.LoadFromText("You Died", GameData.Fonts[1], GameData.Render, {255,255,255});
 
-		Image TotalLinesText[2], Score[2], LevelText;
+		Image TotalLinesText[2], Score[2], LevelText, LevelDecideArrows;
 		TotalLinesText[0].LoadFromText("TotalLines: ", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
 		Score[0].LoadFromText("Score: ", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
 		LevelText.LoadFromText("Level: ", GameData.Fonts[0], GameData.Render, {255, 255, 255});
+		LevelDecideArrows.LoadImage("LevelDecideArrows.png", GameData.Render);
 
 
 		SDL_Log("Finished loading Fonts and Static Text\n");
@@ -376,7 +374,7 @@ int main(int argc, char* argv[]) {
 
 		bool PressedKeys[AmountOfControls + 2];
 		int PressedFor[AmountOfControls + 2];
-		for(int i=0; i<AmountOfControls+2; i++) {
+		for(unsigned int i=0; i<AmountOfControls+2; i++) {
 			PressedKeys[i] = false;
 			PressedFor[i] = 0;
 		}
@@ -389,7 +387,7 @@ int main(int argc, char* argv[]) {
 			LastTime = Temp;
 
 			Uint8 KeyStates[AmountOfControls + 2], AlreadyLetGo[AmountOfControls + 2];
-			for(int i=0; i<AmountOfControls+2; i++) {
+			for(unsigned int i=0; i<AmountOfControls+2; i++) {
 				KeyStates[i] = false;
 				AlreadyLetGo[i] = false;
 			}
@@ -513,16 +511,29 @@ int main(int argc, char* argv[]) {
 						AlreadyLetGo[Buttons::Escape] = true;
 					}
 				}
-
+				if(Event_Handler.type == SDL_MOUSEBUTTONUP) {
+					if(CurrentState == States::Menu) {
+						if(Event_Handler.button.x > (int)TextX && Event_Handler.button.x < (int)TextX+25) {
+							if(Event_Handler.button.y > 20+(21*4) && Event_Handler.button.y < 20+(21*4) + 33) {
+								GameData.SelectedLevel++;
+							}
+							else if(Event_Handler.button.y > 20+(21*4) + 57 && Event_Handler.button.y < 20+(21*4) + 90)
+							{
+								if(GameData.SelectedLevel != 0)
+									GameData.SelectedLevel--;
+							}
+						}
+					}
+				}
 			}
 
-			for(int i=0; i<AmountOfControls+2; i++) {
+			for(unsigned int i=0; i<AmountOfControls+2; i++) {
 				if(PressedKeys[i]) {
 					PressedFor[i] += Time;
 				}
 			}
 
-			for(int i=0; i < AmountOfControls + 2; i++) {
+			for(unsigned int i=0; i < AmountOfControls + 2; i++) {
 				if(PressedFor[i] > SettingsTable[0]+SettingsTable[1]) {
 					if(i == Buttons::SoftDR || i == Buttons::MovLeft || i == Buttons::MovRight) {
 						KeyStates[i] = true;
@@ -533,7 +544,7 @@ int main(int argc, char* argv[]) {
 			
 			//Logic handeling (timers, moving things, menues, all that stuff)
 
-			GameData.CurrentLevel = GameData.AmountLinesCleared/10;
+			GameData.CurrentLevel = std::max(GameData.AmountLinesCleared/10, GameData.SelectedLevel);
 
 			if(CurrentState == States::Game) {
 				if(MoveDownTimer > ((85.52 * pow(0.88, GameData.CurrentLevel)) * 10)) {
@@ -741,6 +752,12 @@ int main(int argc, char* argv[]) {
 			}
 			else if(CurrentState == States::Menu) {
 				EmptyWorld.Draw(GameData.Render, PlayAreaX, 0);
+				LevelDecideArrows.Draw(TextX, 20+(21*4), GameData.Render);
+				Image LevelDecideString;
+				std::stringstream ToString;
+				ToString << GameData.SelectedLevel;
+				LevelDecideString.LoadFromText(ToString.str(), GameData.Fonts[0], GameData.Render, {0xff, 0xff, 0xff, 0xff});
+				LevelDecideString.Draw(TextX+LevelDecideArrows.GetSize().w/2-LevelDecideString.GetSize().w/2, 20+(21*4)+ 34, GameData.Render);
 			}
 			else if(CurrentState == States::Dead) {
 				MainWorld.Draw(GameData.Render, PlayAreaX, 0);

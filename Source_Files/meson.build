@@ -15,6 +15,7 @@ install_data('../res/Title.png', install_dir : 'bin/')
 install_data('../res/BackGround.png', install_dir : 'bin/')
 install_data('../res/5_5_Outline.png', install_dir : 'bin/')
 install_data('../res/Surrounding_Line.png', install_dir : 'bin/')
+install_data('../res/LevelDecideArrows.png', install_dir : 'bin/')
 
 if host_machine.system() == 'windows'
 	install_data('../winres/SDL2.dll', install_dir : BuildDir + 'bin/')
