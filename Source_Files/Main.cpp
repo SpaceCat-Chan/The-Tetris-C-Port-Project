@@ -257,8 +257,9 @@ int main(int argc, char* argv[]) {
 			SDL_Log("unable to load Fonts, TTF_ERROR: %s\n", TTF_GetError());
 		}
 
-		Image DeathText;
-		DeathText.LoadFromText("You Died", GameData.Fonts[1], GameData.Render, {255,255,255});
+		Image DeathText, PauseText;
+		DeathText.LoadFromText("You Died", GameData.Fonts[1], GameData.Render, {0xff, 0xff, 0xff, 0xff});
+		PauseText.LoadFromText("Enter To Resume", GameData.Fonts[1], GameData.Render, {0xff, 0xff, 0xff, 0xff});
 
 		Image TotalLinesText[2], Score[2], LevelText, LevelDecideArrows;
 		TotalLinesText[0].LoadFromText("TotalLines: ", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
@@ -546,6 +547,14 @@ int main(int argc, char* argv[]) {
 
 			GameData.CurrentLevel = std::max(GameData.AmountLinesCleared/10, GameData.SelectedLevel);
 
+			if(KeyStates[Buttons::Escape] && CurrentState == States::Game) {
+				CurrentState = States::Pause;
+			}
+
+			if(KeyStates[Buttons::Return] && CurrentState == States::Pause) {
+				CurrentState = States::Game;
+			}
+
 			if(CurrentState == States::Game) {
 				if(MoveDownTimer > ((85.52 * pow(0.88, GameData.CurrentLevel)) * 10)) {
 					if(ClearLines(GameData, MainTetromino, &MainWorld, ScoreList, SettingsTable, &LastClearImage, LineTypes, TetrominoImages, Blank, CurrentMode, UpcommingTetromino, HoldState))
@@ -750,8 +759,13 @@ int main(int argc, char* argv[]) {
 				UpcommingTetromino.Draw(GameData.Render, TextX, (ScreenHeight - UpcommingY) - 5 * 28);
 				Outline.Draw(TextX - 3, UpcommingY - 5, GameData.Render);
 			}
-			else if(CurrentState == States::Menu) {
+			else if(CurrentState == States::Menu || CurrentState == States::Pause) {
 				EmptyWorld.Draw(GameData.Render, PlayAreaX, 0);
+			}
+			if(CurrentState == States::Pause) {
+				PauseText.Draw(PlayAreaX + 140 - (PauseText.GetSize().w*0.90)/2, 100, GameData.Render, {0, 0, 90, 90});
+			}
+			else if(CurrentState == States::Menu) {
 				LevelDecideArrows.Draw(TextX, 20+(21*4), GameData.Render);
 				Image LevelDecideString;
 				std::stringstream ToString;
