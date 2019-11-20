@@ -115,7 +115,7 @@ struct BasicGameData {
 	SDL_Renderer *Render=nullptr;
 	SDL_Window *Window=nullptr;
 	std::vector<TTF_Font*> Fonts;
-	unsigned long CurrentScore=0, CurrentLevel=0, SelectedLevel=0, AmountLinesCleared=0;
+	unsigned long CurrentScore=0, CurrentLevel=0, SelectedLevel=0, AmountLinesCleared=0, CurrentState=States::Menu, CurrentMode=Modes::Standard;
 	bool Quit=false;
 	std::mt19937 RandEngine;
 };
@@ -142,7 +142,7 @@ void DrawNumber(SDL_Renderer *Render, long Number, Image *Numbers, int x, int y,
 }
 
 
-bool ClearLines(BasicGameData &GameData, Tetromino *MainTetromino, World *MainWorld, unsigned long *ScoreList, long *SettingsTable, Image* LastClearImage, std::string *LineTypes, std::unique_ptr<Image[]> &TetrominoImages, Image &Blank, int &CurrentMode, Tetromino &UpcommingTetromino, bool &HoldState) {
+bool ClearLines(BasicGameData &GameData, Tetromino *MainTetromino, World *MainWorld, unsigned long *ScoreList, long *SettingsTable, Image* LastClearImage, std::string *LineTypes, std::unique_ptr<Image[]> &TetrominoImages, Image &Blank, Tetromino &UpcommingTetromino, bool &HoldState) {
 	ProfileFunction();
 	if(MainTetromino->MoveDown(MainWorld)) {
 		std::unique_ptr<int[]> Check;
@@ -166,7 +166,7 @@ bool ClearLines(BasicGameData &GameData, Tetromino *MainTetromino, World *MainWo
 
 		switch(SettingsTable[2 /*pentomino settings*/]) {
 			case 0: { //never
-				MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, 3, CurrentMode);
+				MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, 3, GameData.CurrentMode);
 				MainTetromino->SetLocation(5, 22);
 				MainTetromino->SetImages(&TetrominoImages);
 				break;}
@@ -174,13 +174,13 @@ bool ClearLines(BasicGameData &GameData, Tetromino *MainTetromino, World *MainWo
 			case 1: { //sometimes
 				std::uniform_int_distribution<int> SizeSelect(3,5);
 				int SelectedLength = (floor((SizeSelect(GameData.RandEngine) - 3) / 2) + 3);
-				MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, SelectedLength, CurrentMode);
+				MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, SelectedLength, GameData.CurrentMode);
 				MainTetromino->SetLocation(5, 22);
 				MainTetromino->SetImages(&TetrominoImages);
 				break;}
 
 			case 2: { //always
-				MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, 4, CurrentMode);
+				MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, 4, GameData.CurrentMode);
 				MainTetromino->SetLocation(5, 22);
 				MainTetromino->SetImages(&TetrominoImages);
 				break;}
@@ -296,8 +296,8 @@ int main(int argc, char* argv[]) {
 		bool HoldState;
 		HoldState = false;
 
-		int CurrentMode = Modes::Standard;
-		int CurrentState = States::Menu;
+		GameData.CurrentMode = Modes::Standard;
+		GameData.CurrentState = States::Menu;
 
 		long StandardHighscoresTableStandard[5] = {0,0,0,0,0};
 		long HighscoresTable[6] = {0, 0, 0, 0, 0, 0};
@@ -518,7 +518,7 @@ int main(int argc, char* argv[]) {
 					}
 				}
 				if(Event_Handler.type == SDL_MOUSEBUTTONUP) {
-					if(CurrentState == States::Menu) {
+					if(GameData.CurrentState == States::Menu) {
 						if(Event_Handler.button.x > (int)TextX && Event_Handler.button.x < (int)TextX+25) {
 							if(Event_Handler.button.y > 20+(21*4) && Event_Handler.button.y < 20+(21*4) + 33) {
 								GameData.SelectedLevel++;
@@ -552,17 +552,17 @@ int main(int argc, char* argv[]) {
 
 			GameData.CurrentLevel = std::max(GameData.AmountLinesCleared/10, GameData.SelectedLevel);
 
-			if(KeyStates[Buttons::Escape] && CurrentState == States::Game) {
-				CurrentState = States::Pause;
+			if(KeyStates[Buttons::Escape] && GameData.CurrentState == States::Game) {
+				GameData.CurrentState = States::Pause;
 			}
 
-			if(KeyStates[Buttons::Return] && CurrentState == States::Pause) {
-				CurrentState = States::Game;
+			if(KeyStates[Buttons::Return] && GameData.CurrentState == States::Pause) {
+				GameData.CurrentState = States::Game;
 			}
 
-			if(CurrentState == States::Game) {
+			if(GameData.CurrentState == States::Game) {
 				if(MoveDownTimer > ((85.52 * pow(0.88, GameData.CurrentLevel)) * 10)) {
-					if(ClearLines(GameData, MainTetromino, &MainWorld, ScoreList, SettingsTable, &LastClearImage, LineTypes, TetrominoImages, Blank, CurrentMode, UpcommingTetromino, HoldState))
+					if(ClearLines(GameData, MainTetromino, &MainWorld, ScoreList, SettingsTable, &LastClearImage, LineTypes, TetrominoImages, Blank, UpcommingTetromino, HoldState))
 						Ghost = MainTetromino->MakeGhost(MainWorld, &GhostImages);
 	
 					MoveDownTimer = Time;
@@ -589,7 +589,7 @@ int main(int argc, char* argv[]) {
 				if(KeyStates[Buttons::HardDR]) {
 					bool Down;
 					do {
-						Down = ClearLines(GameData, MainTetromino, &MainWorld, ScoreList, SettingsTable, &LastClearImage, LineTypes, TetrominoImages, Blank, CurrentMode, UpcommingTetromino, HoldState);
+						Down = ClearLines(GameData, MainTetromino, &MainWorld, ScoreList, SettingsTable, &LastClearImage, LineTypes, TetrominoImages, Blank, UpcommingTetromino, HoldState);
 					}
 					while(!Down);
 					HoldState = false;
@@ -599,7 +599,7 @@ int main(int argc, char* argv[]) {
 					UpcommingTetromino.SetLocation(2,2);
 				}
 				if(KeyStates[Buttons::SoftDR]) {
-					ClearLines(GameData, MainTetromino, &MainWorld, ScoreList, SettingsTable, &LastClearImage, LineTypes, TetrominoImages, Blank, CurrentMode, UpcommingTetromino, HoldState);
+					ClearLines(GameData, MainTetromino, &MainWorld, ScoreList, SettingsTable, &LastClearImage, LineTypes, TetrominoImages, Blank, UpcommingTetromino, HoldState);
 
 					MoveDownTimer = Time;
 					Ghost = MainTetromino->MakeGhost(MainWorld, &GhostImages);
@@ -609,17 +609,17 @@ int main(int argc, char* argv[]) {
 						std::swap(HoldTetromino, MainTetromino);
 						if(MainTetromino->GetRotation() == -1) {
 							if(SettingsTable[2 /* 2 = Pentomino Setting */] == 0 /* 0=false */) {
-							MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, 3, CurrentMode);
+							MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, 3, GameData.CurrentMode);
 							MainTetromino->SetImages(&TetrominoImages);
 						}
 						else if(SettingsTable[2] == 1 /* 1=Sometimes */) {
 							std::uniform_int_distribution<int> SizeSelect(3,5);
 							int SelectedLength = (floor((SizeSelect(GameData.RandEngine) - 3) / 2) + 3);
-							MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, SelectedLength, CurrentMode);
+							MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, SelectedLength, GameData.CurrentMode);
 							MainTetromino->SetImages(&TetrominoImages);
 						}
 						else if(SettingsTable[2] == 2 /* 2=true */) {
-							MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, 4, CurrentMode);
+							MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, 4, GameData.CurrentMode);
 							MainTetromino->SetImages(&TetrominoImages);
 						}
 						}
@@ -632,40 +632,40 @@ int main(int argc, char* argv[]) {
 					}
 				}
 			}
-			else if(CurrentState == States::Menu) {
+			else if(GameData.CurrentState == States::Menu) {
 				if(KeyStates[Buttons::Return]) {
 					MainWorld.Reset();
 					MainWorld.SetImages(&TetrominoImages, &Blank);
 					GameData.AmountLinesCleared = 0;
 					GameData.CurrentScore = 0;
 					if(SettingsTable[2 /* 3 = Pentomino Setting */] == 0 /* 0=false */) {
-						MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, 3, CurrentMode);
+						MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, 3, GameData.CurrentMode);
 						MainTetromino->SetLocation(5, 22);
 						MainTetromino->SetImages(&TetrominoImages);
 					}
 					else if(SettingsTable[2] == 1 /* 1=Sometimes */) {
 						std::uniform_int_distribution<int> SizeSelect(3,5);
 						int SelectedLength = (floor((SizeSelect(GameData.RandEngine) - 3) / 2) + 3);
-						MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, SelectedLength, CurrentMode);
+						MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, SelectedLength, GameData.CurrentMode);
 						MainTetromino->SetLocation(5, 22);
 						MainTetromino->SetImages(&TetrominoImages);
 					}
 					else if(SettingsTable[2] == 2 /* 2=true */) {
-						MainTetromino->ResetWithUpcomming(GameData.RandEngine,UpcommingTetromino, 4, CurrentMode);
+						MainTetromino->ResetWithUpcomming(GameData.RandEngine,UpcommingTetromino, 4, GameData.CurrentMode);
 						MainTetromino->SetLocation(5, 22);
 						MainTetromino->SetImages(&TetrominoImages);
 					}
 					UpcommingTetromino.SetImages(&TetrominoImages);
 					UpcommingTetromino.SetLocation(2,2);
 					Ghost = MainTetromino->MakeGhost(MainWorld, &GhostImages);
-					CurrentState = States::Game;
+					GameData.CurrentState = States::Game;
 				}
 			}
-			else if(CurrentState == States::Dead && KeyStates[Buttons::Return]) {
+			else if(GameData.CurrentState == States::Dead && KeyStates[Buttons::Return]) {
 				HighscoresTable[5] = GameData.CurrentScore;
 				std::sort(HighscoresTable, HighscoresTable+6, [](long a, long b){return a>b;});
 
-				switch(CurrentMode) {
+				switch(GameData.CurrentMode) {
 					case Modes::Standard:
 						File StandardHighscoresFile;
 						StandardHighscoresFile.OpenFile("Data/StandardHighscores.bin", FileModes::Write | FileModes::Binary, HighscoresTable, 5, long);
@@ -674,15 +674,15 @@ int main(int argc, char* argv[]) {
 						break;
 				}
 
-				CurrentState = States::Menu;
+				GameData.CurrentState = States::Menu;
 				LastClearImage.LoadFromText(" ", GameData.Fonts[1], GameData.Render, {255, 255, 255, 255});
 				GameData.AmountLinesCleared = 0;
 				GameData.CurrentScore = 0;
-				HoldTetromino->ResetShape(GameData.RandEngine, -1, CurrentMode);
+				HoldTetromino->ResetShape(GameData.RandEngine, -1, GameData.CurrentMode);
 			}
 			
-			if(MainWorld.LinesAbove(20) > 0 && CurrentState == States::Game) {
-				CurrentState = States::Dead;
+			if(MainWorld.LinesAbove(20) > 0 && GameData.CurrentState == States::Game) {
+				GameData.CurrentState = States::Dead;
 			}
 
 			//Drawing Logic
@@ -739,7 +739,7 @@ int main(int argc, char* argv[]) {
 				HighscoresText[i].Draw(TextX+3, ScreenHeight - ((5-i)*h), GameData.Render);
 			}
 
-			if(CurrentState == States::Game) {
+			if(GameData.CurrentState == States::Game) {
 
 
 				MainWorld.Draw(GameData.Render, PlayAreaX, 0);
@@ -764,13 +764,13 @@ int main(int argc, char* argv[]) {
 				UpcommingTetromino.Draw(GameData.Render, TextX, (ScreenHeight - UpcommingY) - 5 * 28);
 				Outline.Draw(TextX - 3, UpcommingY - 5, GameData.Render);
 			}
-			else if(CurrentState == States::Menu || CurrentState == States::Pause) {
+			else if(GameData.CurrentState == States::Menu || GameData.CurrentState == States::Pause) {
 				EmptyWorld.Draw(GameData.Render, PlayAreaX, 0);
 			}
-			if(CurrentState == States::Pause) {
+			if(GameData.CurrentState == States::Pause) {
 				PauseText.Draw(PlayAreaX + 140 - (PauseText.GetSize().w*0.90)/2, 100, GameData.Render, {0, 0, 90, 90});
 			}
-			else if(CurrentState == States::Menu) {
+			else if(GameData.CurrentState == States::Menu) {
 				LevelDecideArrows.Draw(TextX, 20+(21*4), GameData.Render);
 				Image LevelDecideString;
 				std::stringstream ToString;
@@ -778,7 +778,7 @@ int main(int argc, char* argv[]) {
 				LevelDecideString.LoadFromText(ToString.str(), GameData.Fonts[0], GameData.Render, {0xff, 0xff, 0xff, 0xff});
 				LevelDecideString.Draw(TextX+LevelDecideArrows.GetSize().w/2-LevelDecideString.GetSize().w/2, 20+(21*4)+ 34, GameData.Render);
 			}
-			else if(CurrentState == States::Dead) {
+			else if(GameData.CurrentState == States::Dead) {
 				MainWorld.Draw(GameData.Render, PlayAreaX, 0);
 				DeathText.Draw(PlayAreaX + 140 - DeathText.GetSize().w/2, 100, GameData.Render);
 			}
