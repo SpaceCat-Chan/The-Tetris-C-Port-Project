@@ -4,6 +4,7 @@
 #include <SDL.h>
 #include <memory>
 #include "../../SDL-Helper-Libraries/Image/Image.hpp"
+#include "../../SDL-Helper-Libraries/Profiler.cpp"
 
 class Mino {
 	friend class Tetromino;

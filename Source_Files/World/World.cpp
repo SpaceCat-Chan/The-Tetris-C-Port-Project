@@ -5,6 +5,7 @@
 #define Max_Types_In_One_Piece 2
 
 int World::CheckLines(std::unique_ptr<int[]>& ReturnList) {
+	ProfileFunction();
 	ReturnList = std::make_unique<int[]>(y);
 	int Amount=0;
 	for(int i=0; i<y; i++) {
@@ -25,6 +26,7 @@ int World::CheckLines(std::unique_ptr<int[]>& ReturnList) {
 
 
 Mino& World::GetSpot(int X, int Y) {
+	ProfileFunction();
 	if(X < 0 || X >= x || Y < 0 || Y>= y) {
 		return Random;
 	}
@@ -32,6 +34,7 @@ Mino& World::GetSpot(int X, int Y) {
 }
 
 void World::AbsorbTetromino(Tetromino& Absorb) {
+	ProfileFunction();
 	for(int i=0; i<Absorb.Length; i++) {
 		Absorb.Pieces[i].Position.x += Absorb.MainPiece.Position.x;
 		Absorb.Pieces[i].Position.y += Absorb.MainPiece.Position.y;
@@ -48,6 +51,7 @@ void World::AbsorbTetromino(Tetromino& Absorb) {
 }
 
 void World::SetImages(std::unique_ptr<Image[]>* ImageList, Image* InactiveImage) {
+	ProfileFunction();
 	for(int i=0; i<y; i++) {
 		for(int k=0; k<x; k++) {
 			Info[i][k].SetImageFromType(ImageList, InactiveImage);
@@ -56,6 +60,7 @@ void World::SetImages(std::unique_ptr<Image[]>* ImageList, Image* InactiveImage)
 }
 
 void World::Draw(SDL_Renderer* Render, int X, int Y) {
+	ProfileFunction();
 	for(int i=0; i<y; i++) {
 		for(int k=0; k<x; k++) {
 			Info[i][k].Draw(Render, X, Y+28);
@@ -64,6 +69,7 @@ void World::Draw(SDL_Renderer* Render, int X, int Y) {
 }
 
 void World::ClearLine(int Line) {
+	ProfileFunction();
 	for(int i=Line; i<(y-1); i++) {
 		Info[i] = std::move(Info[i+1]);
 		for(int k=0; k<x; k++) {
@@ -79,6 +85,7 @@ void World::ClearLine(int Line) {
 }
 
 void World::Reset() {
+	ProfileFunction();
 	Info = std::make_unique<std::unique_ptr<Mino[]>[]>(y);
 	for(int i=0; i<y; i++) {
 		Info[i] = std::make_unique<Mino[]>(x);
@@ -92,6 +99,7 @@ void World::Reset() {
 }
 
 int World::LinesAbove(int LineNumber /* inclusive*/) {
+	ProfileFunction();
 	int count=0;
 	for(int i = LineNumber; i < y; i++) {
 		for(int k = 0; k < x; k++) {
@@ -104,6 +112,7 @@ int World::LinesAbove(int LineNumber /* inclusive*/) {
 }
 
 void Tetromino::ResetShape(std::mt19937& Engine, int length/*=3*/, int Mode/*=Modes::Standard*/) {
+	ProfileFunction();
 	if(length == -1) {
 		std::mt19937 Engine;
 		ResetShape(Engine, 0);
@@ -279,6 +288,7 @@ void Tetromino::ResetShape(std::mt19937& Engine, int length/*=3*/, int Mode/*=Mo
 }
 
 void Tetromino::ResetWithUpcomming(std::mt19937& Engine, Tetromino& Upcoming, int Length/*=3*/, int Mode/*=0*/) {
+	ProfileFunction();
 	do{
 		*this = Upcoming;
 		Upcoming.ResetShape(Engine, Length, Mode);
@@ -287,10 +297,12 @@ void Tetromino::ResetWithUpcomming(std::mt19937& Engine, Tetromino& Upcoming, in
 }
 
 void Tetromino::SetLocation(int x, int y) {
+	ProfileFunction();
 	MainPiece.SetPosition(x, y);
 }
 
 SDL_Point RotatePoint(bool Dir, SDL_Point ToRotate) { //Dir: True = Counter Clockwise
+	ProfileFunction();
 	SDL_Point Rotated;
 	if(Dir) {
 		Rotated.x = -1 * ToRotate.y;
@@ -304,6 +316,7 @@ SDL_Point RotatePoint(bool Dir, SDL_Point ToRotate) { //Dir: True = Counter Cloc
 }
 
 Tetromino Tetromino::Rotate(bool Dir) {
+	ProfileFunction();
 	Tetromino Rotated;
 	Rotated = (*this);
 
@@ -314,6 +327,7 @@ Tetromino Tetromino::Rotate(bool Dir) {
 }
 
 std::unique_ptr<SDL_Point[]> SubtractPointLists(std::unique_ptr<SDL_Point[]>& A, std::unique_ptr<SDL_Point[]>& B) {
+	ProfileFunction();
 	std::unique_ptr<SDL_Point[]> Result;
 	Result = std::make_unique<SDL_Point[]>(5);
 
@@ -336,6 +350,7 @@ std::unique_ptr<SDL_Point[]> SubtractPointLists(std::unique_ptr<SDL_Point[]>& A,
 }
 
 void Tetromino::RotateSelf(bool Dir, World* TestWith) {
+	ProfileFunction();
 #include "SRS_File.cpp"
 
 	std::unique_ptr<std::unique_ptr<SDL_Point[]>[]> Final_Offset;
@@ -403,6 +418,7 @@ void Tetromino::RotateSelf(bool Dir, World* TestWith) {
 }
 
 bool Tetromino::MoveDown(World* TestWith, bool InhibitAbsorb/*=false*/) {
+	ProfileFunction();
 	bool Succes = true;
 
 	for(int i=0; i<Length; i++) {
@@ -426,6 +442,7 @@ bool Tetromino::MoveDown(World* TestWith, bool InhibitAbsorb/*=false*/) {
 }
 
 void Tetromino::SetImages(std::unique_ptr<Image[]>* ImageList) {
+	ProfileFunction();
 	for(int i=0; i<Length; i++) {
 		Pieces[i].SetImageFromType(ImageList);
 	}
@@ -433,6 +450,7 @@ void Tetromino::SetImages(std::unique_ptr<Image[]>* ImageList) {
 }
 
 void Tetromino::Draw(SDL_Renderer* Render, int X, int Y) {
+	ProfileFunction();
 	for(int i=0; i<Length; i++) {
 		Pieces[i].Draw(Render, MainPiece.GetPosition().x * 28 + X, MainPiece.GetPosition().y * 28 + Y + 28);
 	}
@@ -440,6 +458,7 @@ void Tetromino::Draw(SDL_Renderer* Render, int X, int Y) {
 }
 
 void Tetromino::MoveSide(int Side, World* TestWith) {
+	ProfileFunction();
 	bool Succes = true;
 
 	for(int i=0; i<Length; i++) {
@@ -457,6 +476,7 @@ void Tetromino::MoveSide(int Side, World* TestWith) {
 }
 
 Tetromino Tetromino::MakeGhost(World& TestWith, std::unique_ptr<Image[]>* ImageList) {
+	ProfileFunction();
 	Tetromino Temp;
 	Temp = *this;
 	Temp.SetImages(ImageList);

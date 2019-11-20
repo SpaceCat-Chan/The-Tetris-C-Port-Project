@@ -28,6 +28,9 @@ void Mino::SetType(int NewType) {
 }
 
 void Mino::Draw(SDL_Renderer* Render, int X_Offset, int Y_Offset) {
+	#ifdef DeppDebug
+	ProfileFunction();
+	#endif
 	if(this) {
 		if(ImageFile) {
 			ImageFile->Draw(X_Offset + 28 * Position.x, 720 - (Y_Offset + 28 * Position.y), Render);

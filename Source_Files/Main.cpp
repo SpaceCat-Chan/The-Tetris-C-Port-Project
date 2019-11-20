@@ -1,6 +1,5 @@
 /*
 TODO:
-Add Pause Screen
 Add Controls and Settings
 
 Add Mode Selection
@@ -25,6 +24,8 @@ Stickman Mode
 #include <time.h>
 #include <sstream>
 #include <algorithm>
+
+#include "../SDL-Helper-Libraries/Profiler.cpp"
 
 constexpr unsigned int ScreenWidth=800;
 constexpr unsigned int ScreenHeight=720;
@@ -120,6 +121,7 @@ struct BasicGameData {
 };
 
 void DrawNumber(SDL_Renderer *Render, long Number, Image *Numbers, int x, int y, TTF_Font *font) {
+	ProfileFunction();
 	std::stringstream ToString;
 	ToString << Number;
 	unsigned long Distance=0;
@@ -141,6 +143,7 @@ void DrawNumber(SDL_Renderer *Render, long Number, Image *Numbers, int x, int y,
 
 
 bool ClearLines(BasicGameData &GameData, Tetromino *MainTetromino, World *MainWorld, unsigned long *ScoreList, long *SettingsTable, Image* LastClearImage, std::string *LineTypes, std::unique_ptr<Image[]> &TetrominoImages, Image &Blank, int &CurrentMode, Tetromino &UpcommingTetromino, bool &HoldState) {
+	ProfileFunction();
 	if(MainTetromino->MoveDown(MainWorld)) {
 		std::unique_ptr<int[]> Check;
 		int Amount;
@@ -198,6 +201,8 @@ bool init(BasicGameData &GameData);
 void close(BasicGameData &GameData);
 
 int main(int argc, char* argv[]) {
+	StartProfiler("Tetris");
+	ProfileFunction();
 	BasicGameData GameData;
 
 	if(init(GameData)) {
@@ -381,7 +386,7 @@ int main(int argc, char* argv[]) {
 		}
 
 		while(!GameData.Quit) {
-
+			Profile("GameLoop");
 			unsigned long Time, Temp;
 			Temp = SDL_GetTicks();
 			Time = Temp - LastTime;
@@ -785,9 +790,11 @@ int main(int argc, char* argv[]) {
 		}
 		close(GameData);
 	}
+	EndProfiler();
 }
 
 bool init(BasicGameData &GameData) {
+	ProfileFunction();
 	if(SDL_Init(SDL_INIT_VIDEO) < 0) {
 		SDL_Log("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
 		return false;
@@ -819,6 +826,7 @@ bool init(BasicGameData &GameData) {
 }
 
 void close(BasicGameData &GameData) {
+	ProfileFunction();
 	SDL_DestroyWindow(GameData.Window);
 	SDL_DestroyRenderer(GameData.Render);
 
