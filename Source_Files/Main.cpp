@@ -240,12 +240,14 @@ int main(int argc, char* argv[]) {
 		Image Blank;
 		Blank.LoadImage("Minos/Blank.png", GameData.Render);
 
-		Image Background, Title, SurroundingLine, DeadLine, Outline;
+		Image Background, Title, SurroundingLine, DeadLine, Outline, SetOptOutline, IndevidualBoxOutline;
 		Background.LoadImage("BackGround.png", GameData.Render);
 		Title.LoadImage("Title.png", GameData.Render);
 		SurroundingLine.LoadImage("Surrounding_Line.png", GameData.Render);
 		DeadLine.LoadImage("Deadline.png", GameData.Render);
 		Outline.LoadImage("5_5_Outline.png", GameData.Render);
+		SetOptOutline.LoadImage("SetOptOutline.png", GameData.Render);
+		IndevidualBoxOutline.LoadImage("IndevidualBox.png", GameData.Render);
 
 		World UpcommingBackground{5,5}, HoldSpotBackground{5,5};
 		UpcommingBackground.SetImages(&TetrominoImages, &Blank);
@@ -266,12 +268,17 @@ int main(int argc, char* argv[]) {
 		DeathText.LoadFromText("You Died", GameData.Fonts[1], GameData.Render, {0xff, 0xff, 0xff, 0xff});
 		PauseText.LoadFromText("Enter To Resume", GameData.Fonts[1], GameData.Render, {0xff, 0xff, 0xff, 0xff});
 
-		Image TotalLinesText[2], Score[2], LevelText, LevelDecideArrows;
-		TotalLinesText[0].LoadFromText("TotalLines: ", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
-		Score[0].LoadFromText("Score: ", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
-		LevelText.LoadFromText("Level: ", GameData.Fonts[0], GameData.Render, {255, 255, 255});
+		Image TotalLinesText[2], Score[2], LevelText, LevelDecideArrows, SettingsText, SettingsDescriptions[AmountOfSettings];
+		TotalLinesText[0].LoadFromText("TotalLines: ", GameData.Fonts[0], GameData.Render, {0xff, 0xff, 0xff, 0xff});
+		Score[0].LoadFromText("Score: ", GameData.Fonts[0], GameData.Render, {0xff, 0xff, 0xff, 0xff});
+		LevelText.LoadFromText("Level: ", GameData.Fonts[0], GameData.Render, {0xff, 0xff, 0xff, 0xff});
 		LevelDecideArrows.LoadImage("LevelDecideArrows.png", GameData.Render);
 
+
+		SettingsText.LoadFromText("Settings", GameData.Fonts[0], GameData.Render, {0xff, 0xff, 0xff, 0xff});
+		SettingsDescriptions[0].LoadFromText("Auto Repeat Delay", GameData.Fonts[0], GameData.Render, {0xff, 0xff, 0xff, 0xff});
+		SettingsDescriptions[1].LoadFromText("Auto Repeat Speed", GameData.Fonts[0], GameData.Render, {0xff, 0xff, 0xff, 0xff});
+		SettingsDescriptions[2].LoadFromText("Pentominos", GameData.Fonts[0], GameData.Render, {0xff, 0xff, 0xff, 0xff});
 
 		SDL_Log("Finished loading Fonts and Static Text\n");
 
@@ -387,7 +394,7 @@ int main(int argc, char* argv[]) {
 
 		while(!GameData.Quit) {
 			Profile("GameLoop");
-			unsigned long Time, Temp;
+			unsigned long Time, Temp, SelectedSetOptBox;
 			Temp = SDL_GetTicks();
 			Time = Temp - LastTime;
 			LastTime = Temp;
@@ -528,6 +535,10 @@ int main(int argc, char* argv[]) {
 								if(GameData.SelectedLevel != 0)
 									GameData.SelectedLevel--;
 							}
+
+							if(SetOptOutline.InsideImage(600, 680, Event_Handler.button.x, Event_Handler.button.y)) {
+								CurrentState = States::Settings;
+							}
 						}
 					}
 				}
@@ -559,6 +570,7 @@ int main(int argc, char* argv[]) {
 			if(KeyStates[Buttons::Return] && CurrentState == States::Pause) {
 				CurrentState = States::Game;
 			}
+
 
 			if(CurrentState == States::Game) {
 				if(MoveDownTimer > ((85.52 * pow(0.88, GameData.CurrentLevel)) * 10)) {
@@ -680,6 +692,13 @@ int main(int argc, char* argv[]) {
 				GameData.CurrentScore = 0;
 				HoldTetromino->ResetShape(GameData.RandEngine, -1, CurrentMode);
 			}
+
+			if(KeyStates[Buttons::Return] && CurrentState == States::Settings) {
+				CurrentState = States::Menu;
+				SettingsFile.OpenFile("Data/Settings.bin", FileModes::Write | FileModes::Binary, nullptr, 0, 0);
+				SettingsFile.Write(SettingsTable, long, AmountOfSettings);
+				SettingsFile.CloseFile();
+			}
 			
 			if(MainWorld.LinesAbove(20) > 0 && CurrentState == States::Game) {
 				CurrentState = States::Dead;
@@ -771,6 +790,8 @@ int main(int argc, char* argv[]) {
 				PauseText.Draw(PlayAreaX + 140 - (PauseText.GetSize().w*0.90)/2, 100, GameData.Render, {0, 0, 90, 90});
 			}
 			else if(CurrentState == States::Menu) {
+				SetOptOutline.Draw(600, 680, GameData.Render);
+
 				LevelDecideArrows.Draw(TextX, 20+(21*4), GameData.Render);
 				Image LevelDecideString;
 				std::stringstream ToString;
