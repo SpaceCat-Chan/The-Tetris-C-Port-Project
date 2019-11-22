@@ -240,12 +240,14 @@ int main(int argc, char* argv[]) {
 		Image Blank;
 		Blank.LoadImage("Minos/Blank.png", GameData.Render);
 
-		Image Background, Title, SurroundingLine, DeadLine, Outline;
+		Image Background, Title, SurroundingLine, DeadLine, Outline, SetOptOutline, IndevidualBoxOutline;
 		Background.LoadImage("BackGround.png", GameData.Render);
 		Title.LoadImage("Title.png", GameData.Render);
 		SurroundingLine.LoadImage("Surrounding_Line.png", GameData.Render);
 		DeadLine.LoadImage("Deadline.png", GameData.Render);
 		Outline.LoadImage("5_5_Outline.png", GameData.Render);
+		SetOptOutline.LoadImage("SetOptOutline.png", GameData.Render);
+		IndevidualBoxOutline.LoadImage("IndevidualBox.png", GameData.Render);
 
 		World UpcommingBackground{5,5}, HoldSpotBackground{5,5};
 		UpcommingBackground.SetImages(&TetrominoImages, &Blank);
@@ -266,12 +268,17 @@ int main(int argc, char* argv[]) {
 		DeathText.LoadFromText("You Died", GameData.Fonts[1], GameData.Render, {0xff, 0xff, 0xff, 0xff});
 		PauseText.LoadFromText("Enter To Resume", GameData.Fonts[1], GameData.Render, {0xff, 0xff, 0xff, 0xff});
 
-		Image TotalLinesText[2], Score[2], LevelText, LevelDecideArrows;
-		TotalLinesText[0].LoadFromText("TotalLines: ", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
-		Score[0].LoadFromText("Score: ", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
-		LevelText.LoadFromText("Level: ", GameData.Fonts[0], GameData.Render, {255, 255, 255});
+		Image TotalLinesText[2], Score[2], LevelText, LevelDecideArrows, SettingsText, SettingsDescriptions[AmountOfSettings];
+		TotalLinesText[0].LoadFromText("TotalLines: ", GameData.Fonts[0], GameData.Render, {0xff, 0xff, 0xff, 0xff});
+		Score[0].LoadFromText("Score: ", GameData.Fonts[0], GameData.Render, {0xff, 0xff, 0xff, 0xff});
+		LevelText.LoadFromText("Level: ", GameData.Fonts[0], GameData.Render, {0xff, 0xff, 0xff, 0xff});
 		LevelDecideArrows.LoadImage("LevelDecideArrows.png", GameData.Render);
 
+
+		SettingsText.LoadFromText("Settings", GameData.Fonts[0], GameData.Render, {0xff, 0xff, 0xff, 0xff});
+		SettingsDescriptions[0].LoadFromText("Auto Repeat Delay", GameData.Fonts[0], GameData.Render, {0xff, 0xff, 0xff, 0xff});
+		SettingsDescriptions[1].LoadFromText("Auto Repeat Speed", GameData.Fonts[0], GameData.Render, {0xff, 0xff, 0xff, 0xff});
+		SettingsDescriptions[2].LoadFromText("Pentominos", GameData.Fonts[0], GameData.Render, {0xff, 0xff, 0xff, 0xff});
 
 		SDL_Log("Finished loading Fonts and Static Text\n");
 
@@ -315,8 +322,7 @@ int main(int argc, char* argv[]) {
 
 		File ControlsFile;
 		uint8_t ControlsTable[AmountOfControls];
-		uint8_t ControlsTableStandard[AmountOfControls] = {SDL_SCANCODE_Z, SDL_SCANCODE_C, SDL_SCANCODE_X, SDL_SCANCODE_DOWN,
-															SDL_SCANCODE_LEFT, SDL_SCANCODE_RIGHT, SDL_SCANCODE_UP, SDL_SCANCODE_S};
+		uint8_t ControlsTableStandard[AmountOfControls] = {SDL_SCANCODE_Z, SDL_SCANCODE_C, SDL_SCANCODE_X, SDL_SCANCODE_DOWN, SDL_SCANCODE_LEFT, SDL_SCANCODE_RIGHT, SDL_SCANCODE_UP, SDL_SCANCODE_S};
 
 		if(!ControlsFile.OpenFile("Data/Controls.bin", FileModes::Read | FileModes::Binary, ControlsTableStandard, AmountOfControls, uint8_t)) {
 			SDL_Log("FileError: %s\n", ControlsFile.GetError().c_str());
@@ -352,7 +358,7 @@ int main(int argc, char* argv[]) {
 
 		Image LastClearImage;
 
-		unsigned long MoveDownTimer=0;
+		unsigned long MoveDownTimer=0, SelectedSetOptBox=0xffffffffffffffff;
 		std::string LineTypes[8] = {"Single","Double","Triple","Tetris!","SUPER\nTETRIS!","T-Spin\nSingle","T-Spin\nDouble!","T-SPIN\nTRIPLE!"};
 		LastClearImage.LoadFromText(" ", GameData.Fonts[1], GameData.Render, {255, 255, 255, 255});
 
@@ -387,7 +393,7 @@ int main(int argc, char* argv[]) {
 
 		while(!GameData.Quit) {
 			Profile("GameLoop");
-			unsigned long Time, Temp;
+			unsigned long Time, Temp, SelectedSetOptBox;
 			Temp = SDL_GetTicks();
 			Time = Temp - LastTime;
 			LastTime = Temp;
@@ -529,6 +535,20 @@ int main(int argc, char* argv[]) {
 									GameData.SelectedLevel--;
 							}
 						}
+
+						if(SetOptOutline.InsideImage(600, 680, Event_Handler.button.x, Event_Handler.button.y)) {
+							CurrentState = States::Settings;
+						}
+
+						if(SelectedSetOptBox == 0xffffffffffffffff) {
+							for(unsigned int i=0; i<AmountOfSettings; i++) {
+								if(SetOptOutline.InsideImage(603, 27*(i+1)*2, Event_Handler.button.x, Event_Handler.button.y)) {
+									SelectedSetOptBox = i;
+									break;
+								}
+							}
+						}
+
 					}
 				}
 			}
@@ -680,6 +700,13 @@ int main(int argc, char* argv[]) {
 				GameData.CurrentScore = 0;
 				HoldTetromino->ResetShape(GameData.RandEngine, -1, GameData.CurrentMode);
 			}
+
+			if(KeyStates[Buttons::Return] && CurrentState == States::Settings) {
+				CurrentState = States::Menu;
+				SettingsFile.OpenFile("Data/Settings.bin", FileModes::Write | FileModes::Binary, nullptr, 0, 0);
+				SettingsFile.Write(SettingsTable, long, AmountOfSettings);
+				SettingsFile.CloseFile();
+			}
 			
 			if(MainWorld.LinesAbove(20) > 0 && GameData.CurrentState == States::Game) {
 				GameData.CurrentState = States::Dead;
@@ -781,6 +808,12 @@ int main(int argc, char* argv[]) {
 			else if(GameData.CurrentState == States::Dead) {
 				MainWorld.Draw(GameData.Render, PlayAreaX, 0);
 				DeathText.Draw(PlayAreaX + 140 - DeathText.GetSize().w/2, 100, GameData.Render);
+			}
+			else if(CurrentState == States::Settings) {
+				for(unsigned long i=0; i<AmountOfSettings; i++) {
+					SettingsDescriptions[i].Draw(603, (27 * (i + 1) * 2), GameData.Render);
+					IndevidualBoxOutline.Draw(603, (27 * (i + 1) * 2) + 25, GameData.Render);
+				}
 			}
 
 			DeadLine.Draw(PlayAreaX, 156, GameData.Render);
