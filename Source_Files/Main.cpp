@@ -537,7 +537,7 @@ int main(int argc, char* argv[]) {
 						}
 
 						if(SetOptOutline.InsideImage(600, 680, Event_Handler.button.x, Event_Handler.button.y)) {
-							CurrentState = States::Settings;
+							GameData.CurrentState = States::Settings;
 						}
 
 						if(SelectedSetOptBox == 0xffffffffffffffff) {
@@ -701,8 +701,8 @@ int main(int argc, char* argv[]) {
 				HoldTetromino->ResetShape(GameData.RandEngine, -1, GameData.CurrentMode);
 			}
 
-			if(KeyStates[Buttons::Return] && CurrentState == States::Settings) {
-				CurrentState = States::Menu;
+			if(KeyStates[Buttons::Return] && GameData.CurrentState == States::Settings) {
+				GameData.CurrentState = States::Menu;
 				SettingsFile.OpenFile("Data/Settings.bin", FileModes::Write | FileModes::Binary, nullptr, 0, 0);
 				SettingsFile.Write(SettingsTable, long, AmountOfSettings);
 				SettingsFile.CloseFile();
@@ -809,7 +809,7 @@ int main(int argc, char* argv[]) {
 				MainWorld.Draw(GameData.Render, PlayAreaX, 0);
 				DeathText.Draw(PlayAreaX + 140 - DeathText.GetSize().w/2, 100, GameData.Render);
 			}
-			else if(CurrentState == States::Settings) {
+			else if(GameData.CurrentState == States::Settings) {
 				for(unsigned long i=0; i<AmountOfSettings; i++) {
 					SettingsDescriptions[i].Draw(603, (27 * (i + 1) * 2), GameData.Render);
 					IndevidualBoxOutline.Draw(603, (27 * (i + 1) * 2) + 25, GameData.Render);
