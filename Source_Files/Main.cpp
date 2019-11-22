@@ -548,6 +548,9 @@ int main(int argc, char* argv[]) {
 								}
 							}
 						}
+						else if(!SetOptOutline.InsideImage(603, 27 * (SelectedSetOptBox + 1) * 2, Event_Handler.button.x, Event_Handler.button.y)) {
+							SelectedSetOptBox = 0xffffffffffffffff;
+						}
 
 					}
 				}
