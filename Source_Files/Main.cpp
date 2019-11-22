@@ -322,8 +322,7 @@ int main(int argc, char* argv[]) {
 
 		File ControlsFile;
 		uint8_t ControlsTable[AmountOfControls];
-		uint8_t ControlsTableStandard[AmountOfControls] = {SDL_SCANCODE_Z, SDL_SCANCODE_C, SDL_SCANCODE_X, SDL_SCANCODE_DOWN,
-															SDL_SCANCODE_LEFT, SDL_SCANCODE_RIGHT, SDL_SCANCODE_UP, SDL_SCANCODE_S};
+		uint8_t ControlsTableStandard[AmountOfControls] = {SDL_SCANCODE_Z, SDL_SCANCODE_C, SDL_SCANCODE_X, SDL_SCANCODE_DOWN, SDL_SCANCODE_LEFT, SDL_SCANCODE_RIGHT, SDL_SCANCODE_UP, SDL_SCANCODE_S};
 
 		if(!ControlsFile.OpenFile("Data/Controls.bin", FileModes::Read | FileModes::Binary, ControlsTableStandard, AmountOfControls, uint8_t)) {
 			SDL_Log("FileError: %s\n", ControlsFile.GetError().c_str());
@@ -359,7 +358,7 @@ int main(int argc, char* argv[]) {
 
 		Image LastClearImage;
 
-		unsigned long MoveDownTimer=0;
+		unsigned long MoveDownTimer=0, SelectedSetOptBox=0xffffffffffffffff;
 		std::string LineTypes[8] = {"Single","Double","Triple","Tetris!","SUPER\nTETRIS!","T-Spin\nSingle","T-Spin\nDouble!","T-SPIN\nTRIPLE!"};
 		LastClearImage.LoadFromText(" ", GameData.Fonts[1], GameData.Render, {255, 255, 255, 255});
 
@@ -535,11 +534,21 @@ int main(int argc, char* argv[]) {
 								if(GameData.SelectedLevel != 0)
 									GameData.SelectedLevel--;
 							}
+						}
 
-							if(SetOptOutline.InsideImage(600, 680, Event_Handler.button.x, Event_Handler.button.y)) {
-								CurrentState = States::Settings;
+						if(SetOptOutline.InsideImage(600, 680, Event_Handler.button.x, Event_Handler.button.y)) {
+							CurrentState = States::Settings;
+						}
+
+						if(SelectedSetOptBox == 0xffffffffffffffff) {
+							for(unsigned int i=0; i<AmountOfSettings; i++) {
+								if(SetOptOutline.InsideImage(603, 27*(i+1)*2, Event_Handler.button.x, Event_Handler.button.y)) {
+									SelectedSetOptBox = i;
+									break;
+								}
 							}
 						}
+
 					}
 				}
 			}
@@ -802,6 +811,12 @@ int main(int argc, char* argv[]) {
 			else if(CurrentState == States::Dead) {
 				MainWorld.Draw(GameData.Render, PlayAreaX, 0);
 				DeathText.Draw(PlayAreaX + 140 - DeathText.GetSize().w/2, 100, GameData.Render);
+			}
+			else if(CurrentState == States::Settings) {
+				for(unsigned long i=0; i<AmountOfSettings; i++) {
+					SettingsDescriptions[i].Draw(603, (27 * (i + 1) * 2), GameData.Render);
+					IndevidualBoxOutline.Draw(603, (27 * (i + 1) * 2) + 25, GameData.Render);
+				}
 			}
 
 			DeadLine.Draw(PlayAreaX, 156, GameData.Render);
