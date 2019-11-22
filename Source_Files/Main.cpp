@@ -358,7 +358,7 @@ int main(int argc, char* argv[]) {
 
 		Image LastClearImage;
 
-		unsigned long MoveDownTimer=0, SelectedSetOptBox=0xffffffffffffffff;
+		unsigned long MoveDownTimer=0, SelectedSetOptBox=0xff;
 		std::string LineTypes[8] = {"Single","Double","Triple","Tetris!","SUPER\nTETRIS!","T-Spin\nSingle","T-Spin\nDouble!","T-SPIN\nTRIPLE!"};
 		LastClearImage.LoadFromText(" ", GameData.Fonts[1], GameData.Render, {255, 255, 255, 255});
 
@@ -539,17 +539,18 @@ int main(int argc, char* argv[]) {
 						if(SetOptOutline.InsideImage(600, 680, Event_Handler.button.x, Event_Handler.button.y)) {
 							GameData.CurrentState = States::Settings;
 						}
-
-						if(SelectedSetOptBox == 0xffffffffffffffff) {
+					}
+					if(GameData.CurrentState == States::Settings) {
+						if(SelectedSetOptBox == 0xff) {
 							for(unsigned int i=0; i<AmountOfSettings; i++) {
-								if(SetOptOutline.InsideImage(603, 27*(i+1)*2, Event_Handler.button.x, Event_Handler.button.y)) {
+								if(IndevidualBoxOutline.InsideImage(603, 27 * (i + 1) * 2 + 25, Event_Handler.button.x, Event_Handler.button.y)) {
 									SelectedSetOptBox = i;
 									break;
 								}
 							}
 						}
-						else if(!SetOptOutline.InsideImage(603, 27 * (SelectedSetOptBox + 1) * 2, Event_Handler.button.x, Event_Handler.button.y)) {
-							SelectedSetOptBox = 0xffffffffffffffff;
+						else if(!IndevidualBoxOutline.InsideImage(603, 27 * (SelectedSetOptBox + 1) * 2 + 25, Event_Handler.button.x, Event_Handler.button.y)) {
+							SelectedSetOptBox = 0xff;
 						}
 
 					}
@@ -801,6 +802,9 @@ int main(int argc, char* argv[]) {
 				PauseText.Draw(PlayAreaX + 140 - (PauseText.GetSize().w*0.90)/2, 100, GameData.Render, {0, 0, 90, 90});
 			}
 			else if(GameData.CurrentState == States::Menu) {
+				SetOptOutline.Draw(600, 680, GameData.Render);
+				SettingsText.Draw((600 + SetOptOutline.GetSize().w/2 - SettingsText.GetSize().w/2), 686, GameData.Render);
+
 				LevelDecideArrows.Draw(TextX, 20+(21*4), GameData.Render);
 				Image LevelDecideString;
 				std::stringstream ToString;
@@ -816,6 +820,36 @@ int main(int argc, char* argv[]) {
 				for(unsigned long i=0; i<AmountOfSettings; i++) {
 					SettingsDescriptions[i].Draw(603, (27 * (i + 1) * 2), GameData.Render);
 					IndevidualBoxOutline.Draw(603, (27 * (i + 1) * 2) + 25, GameData.Render);
+
+					if(i != 2) {
+						std::stringstream SettingToString;
+						SettingToString << SettingsTable[i];
+						if(SelectedSetOptBox == i) {
+							SettingToString << "|";
+						}
+
+						Image SettingImage;
+						SettingImage.LoadFromText(SettingToString.str().c_str(), GameData.Fonts[0], GameData.Render, {0xff, 0xff, 0xff, 0xff});
+						SettingImage.Draw(608, 27 * (i + 1) * 2 + 29, GameData.Render);
+					}
+					else {
+						Image SettingImage;
+						switch(SettingsTable[2]) {
+							case 0: {
+								SettingImage.LoadFromText("Never", GameData.Fonts[0], GameData.Render, {0xff, 0xff, 0xff, 0xff});
+								break;
+							}
+							case 1: {
+								SettingImage.LoadFromText("Sometimes", GameData.Fonts[0], GameData.Render, {0xff, 0xff, 0xff, 0xff});
+								break;
+							}
+							case 2: {
+								SettingImage.LoadFromText("Always", GameData.Fonts[0], GameData.Render, {0xff, 0xff, 0xff, 0xff});
+								break;
+							}
+						}
+						SettingImage.Draw(608, 27 * (i + 1) * 2 + 29, GameData.Render);
+					}
 				}
 			}
 
