@@ -146,7 +146,7 @@ void Tetromino::ResetShape(std::mt19937& Engine, int length/*=3*/, int Mode/*=Mo
 	Z_template[2].y = 1;
 
 	Z_template[3].x = 1;
-	Z_template[3].y = 1;
+	Z_template[3].y = -1;
 
 
 	SDL_Point L_template[4];
@@ -160,7 +160,7 @@ void Tetromino::ResetShape(std::mt19937& Engine, int length/*=3*/, int Mode/*=Mo
 	L_template[2].y = 1;
 
 	L_template[3].x = -1;
-	L_template[3].y = 1;
+	L_template[3].y = -1;
 
 
 	SDL_Point J_template[4];
@@ -174,7 +174,7 @@ void Tetromino::ResetShape(std::mt19937& Engine, int length/*=3*/, int Mode/*=Mo
 	J_template[2].y = 1;
 
 	J_template[3].x = 0;
-	J_template[3].y = 1;
+	J_template[3].y = -1;
 
 
 	SDL_Point I_template[4];

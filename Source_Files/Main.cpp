@@ -544,6 +544,13 @@ int main(int argc, char* argv[]) {
 						if(SelectedSetOptBox == 0xff) {
 							for(unsigned int i=0; i<AmountOfSettings; i++) {
 								if(IndevidualBoxOutline.InsideImage(603, 27 * (i + 1) * 2 + 25, Event_Handler.button.x, Event_Handler.button.y)) {
+									if(i == 2) {
+										SettingsTable[2]++;
+										if(SettingsTable[2] == 3) {
+											SettingsTable[2] = 0;
+										}
+										break;
+									}
 									SelectedSetOptBox = i;
 									break;
 								}

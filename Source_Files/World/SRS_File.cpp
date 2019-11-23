@@ -97,7 +97,7 @@
 	O_OffSet[1][1].y = 0;
 
 	O_OffSet[1][2].x = 0;
-	O_OffSet[1][2].y = 0;
+	O_OffSet[1][2].y = -2;
 
 	O_OffSet[1][3].x = 0;
 	O_OffSet[1][3].y = 0;
@@ -112,8 +112,8 @@
 	O_OffSet[2][1].x = 0;
 	O_OffSet[2][1].y = 0;
 
-	O_OffSet[2][2].x = 0;
-	O_OffSet[2][2].y = 0;
+	O_OffSet[2][2].x = -2;
+	O_OffSet[2][2].y = -2;
 
 	O_OffSet[2][3].x = 0;
 	O_OffSet[2][3].y = 0;
@@ -128,7 +128,7 @@
 	O_OffSet[3][1].x = 0;
 	O_OffSet[3][1].y = 0;
 
-	O_OffSet[3][2].x = 0;
+	O_OffSet[3][2].x = -2;
 	O_OffSet[3][2].y = 0;
 
 	O_OffSet[3][3].x = 0;
