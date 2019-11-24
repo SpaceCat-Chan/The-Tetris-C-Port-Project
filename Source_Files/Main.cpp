@@ -359,7 +359,7 @@ int main(int argc, char* argv[]) {
 		Image LastClearImage;
 
 		unsigned long MoveDownTimer=0, SelectedSetOptBox=0xff;
-		std::string LineTypes[8] = {"Single","Double","Triple","Tetris!","SUPER\nTETRIS!","T-Spin\nSingle","T-Spin\nDouble!","T-SPIN\nTRIPLE!"};
+		std::string LineTypes[8] = {"Single","Double","Triple","Tetris!","SUPER TETRIS!","T-Spin Single","T-Spin Double!","T-SPIN TRIPLE!"};
 		LastClearImage.LoadFromText(" ", GameData.Fonts[1], GameData.Render, {255, 255, 255, 255});
 
 		unsigned long ScoreList[] = {Single, Double, Triple, Tetris, STetris};
@@ -521,6 +521,19 @@ int main(int argc, char* argv[]) {
 					else if(Event_Handler.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
 						PressedKeys[Buttons::Escape] = false;
 						AlreadyLetGo[Buttons::Escape] = true;
+					}
+
+					std::string Input=SDL_GetKeyName(Event_Handler.key.keysym.sym);
+					long Number;
+					std::stringstream(Input) >> Number;
+					if(GameData.CurrentState == States::Settings && SelectedSetOptBox != 0xff) {
+						if(Number || Input == "0") {
+							SettingsTable[SelectedSetOptBox] *= 10;
+							SettingsTable[SelectedSetOptBox] += Number;
+						}
+					}
+					if(Event_Handler.key.keysym.sym == SDLK_BACKSPACE) {
+						SettingsTable[SelectedSetOptBox] /= 10;
 					}
 				}
 				if(Event_Handler.type == SDL_MOUSEBUTTONUP) {
