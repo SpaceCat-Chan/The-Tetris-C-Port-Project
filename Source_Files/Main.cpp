@@ -682,7 +682,9 @@ int main(int argc, char* argv[]) {
 					MainWorld.SetImages(&TetrominoImages, &Blank);
 					GameData.AmountLinesCleared = 0;
 					GameData.CurrentScore = 0;
+					// resetting MainTetromino twice to clear away the upcomming tetromino because it could be the wrong type of shape
 					if(SettingsTable[2 /* 3 = Pentomino Setting */] == 0 /* 0=false */) {
+						MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, 3, GameData.CurrentMode);
 						MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, 3, GameData.CurrentMode);
 						MainTetromino->SetLocation(5, 22);
 						MainTetromino->SetImages(&TetrominoImages);
@@ -691,10 +693,12 @@ int main(int argc, char* argv[]) {
 						std::uniform_int_distribution<int> SizeSelect(3,5);
 						int SelectedLength = (floor((SizeSelect(GameData.RandEngine) - 3) / 2) + 3);
 						MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, SelectedLength, GameData.CurrentMode);
+						MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, SelectedLength, GameData.CurrentMode);
 						MainTetromino->SetLocation(5, 22);
 						MainTetromino->SetImages(&TetrominoImages);
 					}
 					else if(SettingsTable[2] == 2 /* 2=true */) {
+						MainTetromino->ResetWithUpcomming(GameData.RandEngine,UpcommingTetromino, 4, GameData.CurrentMode);
 						MainTetromino->ResetWithUpcomming(GameData.RandEngine,UpcommingTetromino, 4, GameData.CurrentMode);
 						MainTetromino->SetLocation(5, 22);
 						MainTetromino->SetImages(&TetrominoImages);
