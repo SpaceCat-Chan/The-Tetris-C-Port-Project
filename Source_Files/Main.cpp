@@ -141,6 +141,35 @@ void DrawNumber(SDL_Renderer *Render, long Number, Image *Numbers, int x, int y,
 	}
 }
 
+void NewTetromino(bool FullReset, BasicGameData &GameData, Tetromino *MainTetromino, Tetromino &UpcommingTetromino, std::unique_ptr<Image[]> &TetrominoImages, long *SettingsTable, World &MainWorld) {
+	long PieceLength=0;
+	switch(SettingsTable[2]/*Pentomino Setting*/) {
+		case 0/*Never*/: {
+			PieceLength = 3;
+			break;
+		}
+		
+		case 1/*sometimes*/: {
+			std::uniform_int_distribution<int> SizeSelect(3,5);
+			PieceLength = (floor((SizeSelect(GameData.RandEngine) - 3) / 2) + 3);
+			break;
+		}
+		
+		case 2/*Always*/: {
+			PieceLength = 4;
+			break;
+		}
+	}
+	MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, PieceLength, GameData.CurrentMode);
+	if(FullReset) {
+		MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, PieceLength, GameData.CurrentMode);
+	}
+	MainTetromino->SetLocation(5, 22);
+	MainTetromino->SetImages(&TetrominoImages);
+
+	UpcommingTetromino.SetImages(&TetrominoImages);
+	UpcommingTetromino.SetLocation(2,2);
+}
 
 bool ClearLines(BasicGameData &GameData, Tetromino *MainTetromino, World *MainWorld, unsigned long *ScoreList, long *SettingsTable, Image* LastClearImage, std::string *LineTypes, std::unique_ptr<Image[]> &TetrominoImages, Image &Blank, Tetromino &UpcommingTetromino, bool &HoldState) {
 	ProfileFunction();
@@ -164,31 +193,9 @@ bool ClearLines(BasicGameData &GameData, Tetromino *MainTetromino, World *MainWo
 			LastClearImage->LoadFromText(" ", GameData.Fonts[1], GameData.Render, {255, 255, 255, 255});
 		}
 
-		switch(SettingsTable[2 /*pentomino settings*/]) {
-			case 0: { //never
-				MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, 3, GameData.CurrentMode);
-				MainTetromino->SetLocation(5, 22);
-				MainTetromino->SetImages(&TetrominoImages);
-				break;}
-			
-			case 1: { //sometimes
-				std::uniform_int_distribution<int> SizeSelect(3,5);
-				int SelectedLength = (floor((SizeSelect(GameData.RandEngine) - 3) / 2) + 3);
-				MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, SelectedLength, GameData.CurrentMode);
-				MainTetromino->SetLocation(5, 22);
-				MainTetromino->SetImages(&TetrominoImages);
-				break;}
-
-			case 2: { //always
-				MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, 4, GameData.CurrentMode);
-				MainTetromino->SetLocation(5, 22);
-				MainTetromino->SetImages(&TetrominoImages);
-				break;}
-		}
+		NewTetromino(false, GameData, MainTetromino, UpcommingTetromino, TetrominoImages, SettingsTable, *MainWorld);
 
 		MainWorld->SetImages(&TetrominoImages, &Blank);
-		UpcommingTetromino.SetImages(&TetrominoImages);
-		UpcommingTetromino.SetLocation(2,2);
 		HoldState = false;
 		return true;
 	}
@@ -393,7 +400,7 @@ int main(int argc, char* argv[]) {
 
 		while(!GameData.Quit) {
 			Profile("GameLoop");
-			unsigned long Time, Temp, SelectedSetOptBox;
+			unsigned long Time, Temp;
 			Temp = SDL_GetTicks();
 			Time = Temp - LastTime;
 			LastTime = Temp;
@@ -533,7 +540,9 @@ int main(int argc, char* argv[]) {
 						}
 					}
 					if(Event_Handler.key.keysym.sym == SDLK_BACKSPACE) {
-						SettingsTable[SelectedSetOptBox] /= 10;
+						if(SelectedSetOptBox != 0xff) {
+							SettingsTable[SelectedSetOptBox] /= 10;
+						}
 					}
 				}
 				if(Event_Handler.type == SDL_MOUSEBUTTONUP) {
@@ -652,26 +661,11 @@ int main(int argc, char* argv[]) {
 					if(!HoldState) {
 						std::swap(HoldTetromino, MainTetromino);
 						if(MainTetromino->GetRotation() == -1) {
-							if(SettingsTable[2 /* 2 = Pentomino Setting */] == 0 /* 0=false */) {
-							MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, 3, GameData.CurrentMode);
-							MainTetromino->SetImages(&TetrominoImages);
-						}
-						else if(SettingsTable[2] == 1 /* 1=Sometimes */) {
-							std::uniform_int_distribution<int> SizeSelect(3,5);
-							int SelectedLength = (floor((SizeSelect(GameData.RandEngine) - 3) / 2) + 3);
-							MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, SelectedLength, GameData.CurrentMode);
-							MainTetromino->SetImages(&TetrominoImages);
-						}
-						else if(SettingsTable[2] == 2 /* 2=true */) {
-							MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, 4, GameData.CurrentMode);
-							MainTetromino->SetImages(&TetrominoImages);
-						}
+							NewTetromino(false, GameData, MainTetromino, UpcommingTetromino, TetrominoImages, SettingsTable, MainWorld);
 						}
 						MainTetromino->SetLocation(5, 22);
 						Ghost = MainTetromino->MakeGhost(MainWorld, &GhostImages);
 						HoldTetromino->SetLocation(2, 2);
-						UpcommingTetromino.SetImages(&TetrominoImages);
-						UpcommingTetromino.SetLocation(2,2);
 						HoldState = true;
 					}
 				}
@@ -682,29 +676,7 @@ int main(int argc, char* argv[]) {
 					MainWorld.SetImages(&TetrominoImages, &Blank);
 					GameData.AmountLinesCleared = 0;
 					GameData.CurrentScore = 0;
-					// resetting MainTetromino twice to clear away the upcomming tetromino because it could be the wrong type of shape
-					if(SettingsTable[2 /* 3 = Pentomino Setting */] == 0 /* 0=false */) {
-						MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, 3, GameData.CurrentMode);
-						MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, 3, GameData.CurrentMode);
-						MainTetromino->SetLocation(5, 22);
-						MainTetromino->SetImages(&TetrominoImages);
-					}
-					else if(SettingsTable[2] == 1 /* 1=Sometimes */) {
-						std::uniform_int_distribution<int> SizeSelect(3,5);
-						int SelectedLength = (floor((SizeSelect(GameData.RandEngine) - 3) / 2) + 3);
-						MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, SelectedLength, GameData.CurrentMode);
-						MainTetromino->ResetWithUpcomming(GameData.RandEngine, UpcommingTetromino, SelectedLength, GameData.CurrentMode);
-						MainTetromino->SetLocation(5, 22);
-						MainTetromino->SetImages(&TetrominoImages);
-					}
-					else if(SettingsTable[2] == 2 /* 2=true */) {
-						MainTetromino->ResetWithUpcomming(GameData.RandEngine,UpcommingTetromino, 4, GameData.CurrentMode);
-						MainTetromino->ResetWithUpcomming(GameData.RandEngine,UpcommingTetromino, 4, GameData.CurrentMode);
-						MainTetromino->SetLocation(5, 22);
-						MainTetromino->SetImages(&TetrominoImages);
-					}
-					UpcommingTetromino.SetImages(&TetrominoImages);
-					UpcommingTetromino.SetLocation(2,2);
+					NewTetromino(true, GameData, MainTetromino, UpcommingTetromino, TetrominoImages, SettingsTable, MainWorld);
 					Ghost = MainTetromino->MakeGhost(MainWorld, &GhostImages);
 					GameData.CurrentState = States::Game;
 				}
