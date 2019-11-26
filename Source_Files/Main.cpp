@@ -52,6 +52,8 @@ constexpr int TimeBeetweenAction=200;
 constexpr unsigned int AmountOfControls=8;
 constexpr unsigned int AmountOfSettings=3;
 
+constexpr uint8_t ControlsTableStandard[AmountOfControls] = {SDL_SCANCODE_Z, SDL_SCANCODE_C, SDL_SCANCODE_X, SDL_SCANCODE_DOWN, SDL_SCANCODE_LEFT, SDL_SCANCODE_RIGHT, SDL_SCANCODE_UP, SDL_SCANCODE_S};
+
 enum TetrominoList {
 	S,
 	Z,
@@ -275,7 +277,7 @@ int main(int argc, char* argv[]) {
 		DeathText.LoadFromText("You Died", GameData.Fonts[1], GameData.Render, {0xff, 0xff, 0xff, 0xff});
 		PauseText.LoadFromText("Enter To Resume", GameData.Fonts[1], GameData.Render, {0xff, 0xff, 0xff, 0xff});
 
-		Image TotalLinesText[2], Score[2], LevelText, LevelDecideArrows, SettingsText, SettingsDescriptions[AmountOfSettings];
+		Image TotalLinesText[2], Score[2], LevelText, LevelDecideArrows, SettingsText, SettingsDescriptions[AmountOfSettings], ControlsText, ControlsDescriptions[AmountOfControls];
 		TotalLinesText[0].LoadFromText("TotalLines: ", GameData.Fonts[0], GameData.Render, {0xff, 0xff, 0xff, 0xff});
 		Score[0].LoadFromText("Score: ", GameData.Fonts[0], GameData.Render, {0xff, 0xff, 0xff, 0xff});
 		LevelText.LoadFromText("Level: ", GameData.Fonts[0], GameData.Render, {0xff, 0xff, 0xff, 0xff});
@@ -286,6 +288,36 @@ int main(int argc, char* argv[]) {
 		SettingsDescriptions[0].LoadFromText("Auto Repeat Delay", GameData.Fonts[0], GameData.Render, {0xff, 0xff, 0xff, 0xff});
 		SettingsDescriptions[1].LoadFromText("Auto Repeat Speed", GameData.Fonts[0], GameData.Render, {0xff, 0xff, 0xff, 0xff});
 		SettingsDescriptions[2].LoadFromText("Pentominos", GameData.Fonts[0], GameData.Render, {0xff, 0xff, 0xff, 0xff});
+
+		ControlsText.LoadFromText("Controls", GameData.Fonts[0], GameData.Render, {0xff, 0xff, 0xff, 0xff});
+		ControlsDescriptions[0].LoadFromText("Rotate Left", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+		ControlsDescriptions[1].LoadFromText("Rotate Right", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+		ControlsDescriptions[2].LoadFromText("Hard Drop", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+		ControlsDescriptions[3].LoadFromText("Soft Drop", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+		ControlsDescriptions[4].LoadFromText("Move Left", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+		ControlsDescriptions[5].LoadFromText("Move Right", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+		ControlsDescriptions[6].LoadFromText("Hold Spot", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+		ControlsDescriptions[7].LoadFromText("Swap (Unused)", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+		
+		Image HighScoreTitle, HighscoresText[5];
+		HighscoresText[0].LoadFromText("1:", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+		HighscoresText[1].LoadFromText("2:", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+		HighscoresText[2].LoadFromText("3:", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+		HighscoresText[3].LoadFromText("4:", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+		HighscoresText[4].LoadFromText("5:", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+		HighScoreTitle.LoadFromText("Highscores:", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+		
+		Image Numbers[10];
+		Numbers[0].LoadFromText("0", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+		Numbers[1].LoadFromText("1", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+		Numbers[2].LoadFromText("2", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+		Numbers[3].LoadFromText("3", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+		Numbers[4].LoadFromText("4", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+		Numbers[5].LoadFromText("5", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+		Numbers[6].LoadFromText("6", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+		Numbers[7].LoadFromText("7", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+		Numbers[8].LoadFromText("8", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+		Numbers[9].LoadFromText("9", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
 
 		SDL_Log("Finished loading Fonts and Static Text\n");
 
@@ -329,7 +361,6 @@ int main(int argc, char* argv[]) {
 
 		File ControlsFile;
 		uint8_t ControlsTable[AmountOfControls];
-		uint8_t ControlsTableStandard[AmountOfControls] = {SDL_SCANCODE_Z, SDL_SCANCODE_C, SDL_SCANCODE_X, SDL_SCANCODE_DOWN, SDL_SCANCODE_LEFT, SDL_SCANCODE_RIGHT, SDL_SCANCODE_UP, SDL_SCANCODE_S};
 
 		if(!ControlsFile.OpenFile("Data/Controls.bin", FileModes::Read | FileModes::Binary, ControlsTableStandard, AmountOfControls, uint8_t)) {
 			SDL_Log("FileError: %s\n", ControlsFile.GetError().c_str());
@@ -365,31 +396,12 @@ int main(int argc, char* argv[]) {
 
 		Image LastClearImage;
 
-		unsigned long MoveDownTimer=0, SelectedSetOptBox=0xff;
+		unsigned long MoveDownTimer=0, SelectedSetOptBox=0xff, LastState=States::Controls;
 		std::string LineTypes[8] = {"Single","Double","Triple","Tetris!","SUPER TETRIS!","T-Spin Single","T-Spin Double!","T-SPIN TRIPLE!"};
 		LastClearImage.LoadFromText(" ", GameData.Fonts[1], GameData.Render, {255, 255, 255, 255});
 
 		unsigned long ScoreList[] = {Single, Double, Triple, Tetris, STetris};
 
-		Image HighScoreTitle, HighscoresText[5];
-		HighscoresText[0].LoadFromText("1:", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
-		HighscoresText[1].LoadFromText("2:", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
-		HighscoresText[2].LoadFromText("3:", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
-		HighscoresText[3].LoadFromText("4:", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
-		HighscoresText[4].LoadFromText("5:", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
-		HighScoreTitle.LoadFromText("Highscores:", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
-		
-		Image Numbers[10];
-		Numbers[0].LoadFromText("0", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
-		Numbers[1].LoadFromText("1", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
-		Numbers[2].LoadFromText("2", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
-		Numbers[3].LoadFromText("3", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
-		Numbers[4].LoadFromText("4", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
-		Numbers[5].LoadFromText("5", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
-		Numbers[6].LoadFromText("6", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
-		Numbers[7].LoadFromText("7", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
-		Numbers[8].LoadFromText("8", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
-		Numbers[9].LoadFromText("9", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
 
 		bool PressedKeys[AmountOfControls + 2];
 		int PressedFor[AmountOfControls + 2];
@@ -533,16 +545,23 @@ int main(int argc, char* argv[]) {
 					std::string Input=SDL_GetKeyName(Event_Handler.key.keysym.sym);
 					long Number;
 					std::stringstream(Input) >> Number;
-					if(GameData.CurrentState == States::Settings && SelectedSetOptBox != 0xff) {
-						if(Number || Input == "0") {
-							SettingsTable[SelectedSetOptBox] *= 10;
-							SettingsTable[SelectedSetOptBox] += Number;
+					if(GameData.CurrentState == States::Settings) {
+						if(SelectedSetOptBox != 0xff) {
+							if(Number || Input == "0") {
+								SettingsTable[SelectedSetOptBox] *= 10;
+								SettingsTable[SelectedSetOptBox] += Number;
+							}
+						}
+						if(Event_Handler.key.keysym.sym == SDLK_BACKSPACE) {
+							if(SelectedSetOptBox != 0xff) {
+								SettingsTable[SelectedSetOptBox] /= 10;
+							}
 						}
 					}
-					if(Event_Handler.key.keysym.sym == SDLK_BACKSPACE) {
-						if(SelectedSetOptBox != 0xff) {
-							SettingsTable[SelectedSetOptBox] /= 10;
-						}
+
+					if(GameData.CurrentState == States::Controls && SelectedSetOptBox != 0xff) {
+						ControlsTable[SelectedSetOptBox] = Event_Handler.key.keysym.scancode;
+						SelectedSetOptBox = 0xff;
 					}
 				}
 				if(Event_Handler.type == SDL_MOUSEBUTTONUP) {
@@ -560,6 +579,14 @@ int main(int argc, char* argv[]) {
 
 						if(SetOptOutline.InsideImage(600, 680, Event_Handler.button.x, Event_Handler.button.y)) {
 							GameData.CurrentState = States::Settings;
+						}
+						if(SetOptOutline.InsideImage(600, 640, Event_Handler.button.x, Event_Handler.button.y)) {
+							std::swap(GameData.CurrentState, LastState);
+						}
+					}
+					if(GameData.CurrentState == States::Pause) {
+						if(SetOptOutline.InsideImage(600, 640, Event_Handler.button.x, Event_Handler.button.y)) {
+							std::swap(GameData.CurrentState, LastState);
 						}
 					}
 					if(GameData.CurrentState == States::Settings) {
@@ -581,7 +608,24 @@ int main(int argc, char* argv[]) {
 						else if(!IndevidualBoxOutline.InsideImage(603, 27 * (SelectedSetOptBox + 1) * 2 + 25, Event_Handler.button.x, Event_Handler.button.y)) {
 							SelectedSetOptBox = 0xff;
 						}
-
+					}
+					if(GameData.CurrentState == States::Controls) {
+						if(SelectedSetOptBox == 0xff) {
+							for(unsigned int i=0; i<AmountOfControls+1; i++) {
+								if(IndevidualBoxOutline.InsideImage(603, 27 * (i + 1) * 2 + 25, Event_Handler.button.x, Event_Handler.button.y)) {
+									if(i != AmountOfControls) {
+										SelectedSetOptBox = i;
+										break;
+									}
+									for(unsigned int i=0; i<AmountOfControls; i++) {
+										ControlsTable[i] = ControlsTableStandard[i];
+									}
+								}
+							}
+						}
+						else if(!IndevidualBoxOutline.InsideImage(603, 27 * (SelectedSetOptBox + 1) * 2 + 25, Event_Handler.button.x, Event_Handler.button.y)) {
+							SelectedSetOptBox = 0xff;
+						}
 					}
 				}
 			}
@@ -707,6 +751,12 @@ int main(int argc, char* argv[]) {
 				SettingsFile.Write(SettingsTable, long, AmountOfSettings);
 				SettingsFile.CloseFile();
 			}
+			if(KeyStates[Buttons::Return] && GameData.CurrentState == States::Controls) {
+				std::swap(GameData.CurrentState, LastState);
+				ControlsFile.OpenFile("Data/Controls.bin", FileModes::Write | FileModes::Binary, nullptr, 0, 0);
+				ControlsFile.Write(ControlsTable, long, AmountOfControls);
+				ControlsFile.CloseFile();
+			}
 			
 			if(MainWorld.LinesAbove(20) > 0 && GameData.CurrentState == States::Game) {
 				GameData.CurrentState = States::Dead;
@@ -793,6 +843,8 @@ int main(int argc, char* argv[]) {
 			}
 			else if(GameData.CurrentState == States::Menu || GameData.CurrentState == States::Pause) {
 				EmptyWorld.Draw(GameData.Render, PlayAreaX, 0);
+				SetOptOutline.Draw(600, 640, GameData.Render);
+				ControlsText.Draw(600 + SetOptOutline.GetSize().w/2 - ControlsText.GetSize().w/2, 646, GameData.Render);
 			}
 			if(GameData.CurrentState == States::Pause) {
 				PauseText.Draw(PlayAreaX + 140 - (PauseText.GetSize().w*0.90)/2, 100, GameData.Render, {0, 0, 90, 90});
@@ -813,6 +865,8 @@ int main(int argc, char* argv[]) {
 				DeathText.Draw(PlayAreaX + 140 - DeathText.GetSize().w/2, 100, GameData.Render);
 			}
 			else if(GameData.CurrentState == States::Settings) {
+				EmptyWorld.Draw(GameData.Render, PlayAreaX, 0);
+
 				for(unsigned long i=0; i<AmountOfSettings; i++) {
 					SettingsDescriptions[i].Draw(603, (27 * (i + 1) * 2), GameData.Render);
 					IndevidualBoxOutline.Draw(603, (27 * (i + 1) * 2) + 25, GameData.Render);
@@ -848,6 +902,28 @@ int main(int argc, char* argv[]) {
 					}
 				}
 			}
+			else if(GameData.CurrentState == States::Controls) {
+				EmptyWorld.Draw(GameData.Render, PlayAreaX, 0);
+
+				for(unsigned long i=0; i<AmountOfControls+1; i++) {
+					if(i != AmountOfControls)
+						ControlsDescriptions[i].Draw(603, (27 * (i + 1) * 2), GameData.Render);
+					IndevidualBoxOutline.Draw(603, (27 * (i + 1) * 2) + 25, GameData.Render);
+
+					Image ControlImage;
+					if(SelectedSetOptBox == i) {
+						ControlImage.LoadFromText("Press a Key", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+					}
+					else if(i == AmountOfControls) {
+						ControlImage.LoadFromText("Reset Controls", GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+					}
+					else {
+						ControlImage.LoadFromText(SDL_GetKeyName(SDL_GetKeyFromScancode((SDL_Scancode)ControlsTable[i])), GameData.Fonts[0], GameData.Render, {255, 255, 255, 255});
+					}
+					ControlImage.Draw(608, 27 * (i + 1) * 2 + 29, GameData.Render);
+				}
+			}
+
 
 			DeadLine.Draw(PlayAreaX, 156, GameData.Render);
 
