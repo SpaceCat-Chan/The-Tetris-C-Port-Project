@@ -1,7 +1,5 @@
 /*
 TODO:
-Add Controls and Settings
-
 Add Mode Selection
 	Add Basic Modes (Hidden)
 	Add Swap Mode
