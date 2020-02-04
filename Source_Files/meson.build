@@ -18,12 +18,3 @@ install_data('../res/Surrounding_Line.png', install_dir : 'bin/')
 install_data('../res/LevelDecideArrows.png', install_dir : 'bin/')
 install_data('../res/SetOptOutline.png', install_dir : 'bin/')
 install_data('../res/IndevidualBox.png', install_dir : 'bin/')
-
-if host_machine.system() == 'windows'
-	install_data('../winres/SDL2.dll', install_dir : 'bin/')
-	install_data('../winres/zlib1.dll', install_dir : 'bin/')
-	install_data('../winres/SDL2_ttf.dll', install_dir : 'bin/')
-	install_data('../winres/SDL2_image.dll', install_dir : 'bin/')
-	install_data('../winres/libpng16-16.dll', install_dir : 'bin/')
-	install_data('../winres/libfreetype-6.dll', install_dir : 'bin/')
-endif
